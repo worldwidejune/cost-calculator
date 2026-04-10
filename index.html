@@ -298,7 +298,6 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
         <div class="form-group">
           <label>目的地</label>
           <select id="c-dest"></select>
-          <div id="c-visa-tip" class="visa-tip"></div>
         </div>
         <div class="form-group">
           <label>时长 (月)</label>
@@ -916,17 +915,12 @@ function populateSelects() {
   document.getElementById('l-origin').addEventListener('change', () => updateDests('l'));
   document.getElementById('c-origin').addEventListener('change', () => updateDests('c'));
 
-  // 绑定签证提示：目的地/天数/月数变化时自动更新
-  // 目的地变化 — 仅差旅(t)和对比(c)显示签证提示（派驻/LTBS由公司统一办理签证）
-  ['t','c'].forEach(p => {
-    document.getElementById(p + '-dest').addEventListener('change', () => updateVisaTip(p));
-  });
-  // 天数/月数变化也触发签证推荐更新
+  // 绑定签证提示：目的地/天数/月数变化时自动更新（仅差旅面板，派驻/LTBS/对比均不显示）
+  document.getElementById('t-dest').addEventListener('change', () => updateVisaTip('t'));
   ['t-months','t-days'].forEach(id => document.getElementById(id).addEventListener('input', () => updateVisaTip('t')));
-  ['c-months','c-days'].forEach(id => document.getElementById(id).addEventListener('input', () => updateVisaTip('c')));
 
   // 初始化默认目的地的签证提示（含天数）
-  ['t','c'].forEach(p => updateVisaTip(p));
+  updateVisaTip('t');
 }
 
 function updateDests(prefix) {
@@ -937,8 +931,8 @@ function updateDests(prefix) {
   const available = Object.keys(FLIGHT_PRICES[origin] || {}).sort();
   available.forEach(d => s.add(new Option(d, d)));
   if ([...s.options].some(o => o.value === cur)) s.value = cur;
-  // 仅差旅(t)和对比(c)面板显示签证提示
-  if (prefix === 't' || prefix === 'c') updateVisaTip(prefix);
+  // 仅差旅(t)面板显示签证提示
+  if (prefix === 't') updateVisaTip(prefix);
 }
 
 function calcTravel() {
