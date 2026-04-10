@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>国际差旅 & 派驻 & LTBS 成本测算器</title>
+<style>
+:root {
+  --primary: #1a73e8;
+  --primary-light: #e8f0fe;
+  --success: #0d904f;
+  --success-light: #e6f4ea;
+  --warning: #e37400;
+  --warning-light: #fef7e0;
+  --danger: #d93025;
+  --purple: #7c3aed;
+  --purple-light: #ede9fe;
+  --bg: #f8f9fa;
+  --card: #ffffff;
+  --border: #dadce0;
+  --text: #202124;
+  --text-secondary: #5f6368;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; color: var(--primary); }
+.subtitle { text-align: center; color: var(--text-secondary); font-size: 14px; margin-bottom: 32px; }
+.rate-panel { max-width: 780px; margin: -20px auto 28px; background: linear-gradient(135deg, #f0f4ff 0%, #f8f6ff 100%); border: 1px solid #d8dff5; border-radius: 10px; padding: 14px 18px 12px; }
+.rate-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.rate-header .rate-title { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+.rate-header .rate-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+.rate-badge.live { background: var(--success-light); color: var(--success); }
+.rate-badge.offline { background: var(--warning-light); color: var(--warning); }
+.rate-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 12px; }
+.rate-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; background: rgba(255,255,255,0.7); border-radius: 6px; font-size: 12px; }
+.rate-item .rate-pair { color: var(--text-secondary); font-weight: 500; }
+.rate-item .rate-value { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) { .rate-grid { grid-template-columns: repeat(2, 1fr); } }
+.tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--border); border-radius: var(--radius); padding: 4px; flex-wrap: wrap; }
+.tab { flex: 1; padding: 12px 8px; text-align: center; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; transition: all .2s; border: none; background: transparent; color: var(--text-secondary); min-width: 100px; }
+.tab.active { background: var(--card); color: var(--primary); box-shadow: var(--shadow); }
+.tab:hover:not(.active) { color: var(--text); }
+.card { background: var(--card); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+.card-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+.card-title .icon { font-size: 22px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+.level-hint { font-weight: 400; font-size: 11px; color: #9aa0a6; margin-left: 4px; }
+.form-group select, .form-group input { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: border-color .2s; background: #fff; }
+.form-group select:focus, .form-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,115,232,0.12); }
+.btn { padding: 12px 32px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all .2s; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: #1557b0; transform: translateY(-1px); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #0a7a42; transform: translateY(-1px); }
+.btn-purple { background: var(--purple); color: #fff; }
+.btn-purple:hover { background: #6d28d9; transform: translateY(-1px); }
+.btn-row { text-align: center; margin-top: 20px; }
+.result-panel { display: none; }
+.result-panel.show { display: block; }
+.result-total { color: #fff; border-radius: var(--radius); padding: 24px; text-align: center; margin-bottom: 20px; }
+.result-total .amount { font-size: 36px; font-weight: 700; margin: 8px 0; }
+.result-total .label { font-size: 14px; opacity: .85; }
+.result-table { width: 100%; border-collapse: collapse; }
+.result-table th, .result-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+.result-table th { background: var(--bg); font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; }
+.result-table tr:last-child td { border-bottom: none; }
+.result-table .amount { font-weight: 600; color: var(--text); text-align: right; }
+.result-table .sub { color: var(--text-secondary); font-size: 13px; }
+.note-box { background: var(--warning-light); border-left: 4px solid var(--warning); padding: 12px 16px; border-radius: 0 8px 8px 0; margin-top: 16px; font-size: 13px; color: #5f4b08; }
+.info-box { background: var(--primary-light); border-left: 4px solid var(--primary); padding: 14px 18px; border-radius: 0 8px 8px 0; margin-bottom: 20px; font-size: 14px; color: #1a4e8a; line-height: 1.7; }
+.info-box .title { font-weight: 600; margin-bottom: 4px; font-size: 15px; }
+.info-box-green { background: var(--success-light); border-left-color: var(--success); color: #0a5c32; }
+.info-box-purple { background: var(--purple-light); border-left-color: var(--purple); color: #4c1d95; }
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.link-section { margin-top: 20px; padding: 16px 20px; background: var(--bg); border-radius: var(--radius); border: 1px solid var(--border); }
+.link-section .link-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.link-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
+.link-item a { color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 500; }
+.link-item a:hover { text-decoration: underline; }
+.link-item .link-icon { font-size: 16px; }
+@media (max-width: 900px) { .compare-grid { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+.hidden { display: none; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.badge-info { background: var(--primary-light); color: var(--primary); }
+.badge-success { background: var(--success-light); color: var(--success); }
+.badge-warning { background: var(--warning-light); color: var(--warning); }
+.info-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.info-chip { background: var(--bg); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 13px; }
+.info-chip strong { color: var(--primary); }
+.special-notes { margin-top: 16px; font-size: 13px; color: var(--text-secondary); }
+.special-notes li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🌏 国际差旅 & 派驻 & LTBS 成本测算器</h1>
+  <p class="subtitle">快速估算国际差旅、国际派驻和LTBS的增加成本</p>
+  <div id="rate-panel" class="rate-panel">
+    <div class="rate-header">
+      <span class="rate-title">💱 加载实时汇率中...</span>
+      <span id="rate-badge" class="rate-badge" style="display:none"></span>
+    </div>
+    <div class="rate-grid" id="rate-grid"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('travel')">✈️ 国际差旅</button>
+    <button class="tab" onclick="switchTab('dispatch')">🏠 国际派驻</button>
+    <button class="tab" onclick="switchTab('ltbs')">🔄 LTBS</button>
+    <button class="tab" onclick="switchTab('compare')">📊 对比分析</button>
+  </div>
+
+  <!-- ========== 差旅面板 ========== -->
+  <div id="panel-travel">
+    <div class="info-box">
+      <div class="title">📋 适用场景</div>
+      短期海外差旅需要，需前往不同海外国家。
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">✈️</span> 差旅信息</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>出发地</label>
+          <select id="t-origin"></select>
+        </div>
+        <div class="form-group">
+          <label>目的地</label>
+          <select id="t-dest"></select>
+        </div>
+        <div class="form-group">
+          <label>时长 (月)</label>
+          <input type="number" id="t-months" value="6" min="1" max="24">
+        </div>
+        <div class="form-group">
+          <label>出差天数</label>
+          <input type="number" id="t-days" value="" min="1" max="365" placeholder="默认=月数×10">
+        </div>
+        <div class="form-group">
+          <label>往返次数</label>
+          <input type="number" id="t-trips" value="" min="1" max="24" placeholder="默认=月数">
+        </div>
+        <div class="form-group">
+          <label>员工职级 <span class="level-hint">请输入专业职级或管理职级，如11、L2-1</span></label>
+          <input type="text" id="t-level" value="11" placeholder="如 11、L2-1">
+        </div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="calcTravel()">计算差旅成本</button></div>
+    </div>
+    <div id="travel-result" class="result-panel"></div>
+    <div class="link-section">
+      <div class="link-title">📎 相关指引</div>
+      <div class="link-item">
+        <span class="link-icon">📄</span>
+        <a href="https://iwiki.woa.com/p/4015975441" target="_blank">各国差旅指引 Travel Guidelines</a>
+      </div>
+      <div class="link-item">
+        <span class="link-icon">📋</span>
+        <a href="https://iwiki.woa.com/p/4016284203" target="_blank">海外差旅白名单</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 派驻面板 ========== -->
+  <div id="panel-dispatch" class="hidden">
+    <div class="info-box info-box-green">
+      <div class="title">📋 适用场景</div>
+      主要支持单一国家业务，且派驻时间至少6个月，最长为24个月，到期后最多可允许延期12个月。
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🏠</span> 派驻信息</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>派驻地</label>
+          <select id="d-dest"></select>
+        </div>
+        <div class="form-group">
+          <label>派驻时长 (月)</label>
+          <input type="number" id="d-months" value="12" min="6" max="36">
+        </div>
+        <div class="form-group">
+          <label>携带家属</label>
+          <select id="d-family">
+            <option value="仅本人">仅本人</option>
+            <option value="本人+配偶">本人+配偶</option>
+            <option value="本人+配偶+子女">本人+配偶+子女</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>员工职级 <span class="level-hint">请输入专业职级或管理职级，如11、L2-1</span></label>
+          <input type="text" id="d-level" value="11" placeholder="如 11、L2-1">
+        </div>
+        <div class="form-group">
+          <label>员工税前年薪 (人民币)</label>
+          <input type="number" id="d-salary" value="800000" min="100000" max="10000000" step="10000">
+        </div>
+      </div>
+      <div class="btn-row"><button class="btn btn-success" onclick="calcDispatch()">计算派驻成本</button></div>
+    </div>
+    <div id="dispatch-result" class="result-panel"></div>
+  </div>
+
+  <!-- ========== LTBS面板 ========== -->
+  <div id="panel-ltbs" class="hidden">
+    <div class="info-box info-box-purple">
+      <div class="title">📋 适用场景</div>
+      Long-Term Business Stay，介于国际差旅和国际派驻之间的异动场景。以商务签优先支持员工短期内异动到海外国家，天数通常为30天-182天。目前可支持美国、英国、新加坡、荷兰、日本、阿联酋、中国大陆、波兰、德国、法国等国家地区。提供每月生活津贴（对齐公司标准版国际派驻"员工档"）、住房支持（短租公寓，成本低于差旅酒店）、往返交通，同时公司需承担个税额外成本。总成本约为国际差旅的85%。
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🔄</span> LTBS 信息</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>出发地</label>
+          <select id="l-origin"></select>
+        </div>
+        <div class="form-group">
+          <label>目的地</label>
+          <select id="l-dest"></select>
+        </div>
+        <div class="form-group">
+          <label>时长 (月)</label>
+          <input type="number" id="l-months" value="6" min="1" max="6">
+        </div>
+        <div class="form-group">
+          <label>出差天数</label>
+          <input type="number" id="l-days" value="" min="30" max="182" placeholder="默认=月数×10">
+        </div>
+        <div class="form-group">
+          <label>往返次数</label>
+          <input type="number" id="l-trips" value="" min="1" max="12" placeholder="默认=月数">
+        </div>
+        <div class="form-group">
+          <label>员工职级 <span class="level-hint">请输入专业职级或管理职级，如11、L2-1</span></label>
+          <input type="text" id="l-level" value="11" placeholder="如 11、L2-1">
+        </div>
+      </div>
+      <div class="btn-row"><button class="btn btn-purple" onclick="calcLTBS()">计算 LTBS 成本</button></div>
+    </div>
+    <div id="ltbs-result" class="result-panel"></div>
+  </div>
+
+  <!-- ========== 对比面板 ========== -->
+  <div id="panel-compare" class="hidden">
+    <div class="info-box">
+      <div class="title">📊 三种方案对比</div>
+      并列对比国际差旅、LTBS和国际派驻三种方案的成本，辅助业务决策。
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">📊</span> 对比参数</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>出发地</label>
+          <select id="c-origin"></select>
+        </div>
+        <div class="form-group">
+          <label>目的地</label>
+          <select id="c-dest"></select>
+        </div>
+        <div class="form-group">
+          <label>时长 (月)</label>
+          <input type="number" id="c-months" value="6" min="1" max="24">
+        </div>
+        <div class="form-group">
+          <label>出差天数 (差旅/LTBS)</label>
+          <input type="number" id="c-days" value="" min="1" max="365" placeholder="默认=月数×10">
+        </div>
+        <div class="form-group">
+          <label>员工职级 <span class="level-hint">请输入专业职级或管理职级，如11、L2-1</span></label>
+          <input type="text" id="c-level" value="11" placeholder="如 11、L2-1">
+        </div>
+        <div class="form-group">
+          <label>携带家属 (派驻)</label>
+          <select id="c-family">
+            <option value="仅本人">仅本人</option>
+            <option value="本人+配偶">本人+配偶</option>
+            <option value="本人+配偶+子女">本人+配偶+子女</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>员工税前年薪 (派驻)</label>
+          <input type="number" id="c-salary" value="800000" min="100000" max="10000000" step="10000">
+        </div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="calcCompare()">对比分析</button></div>
+    </div>
+    <div id="compare-result" class="result-panel"></div>
+  </div>
+</div>
+
+<script>
+// ===== EXCHANGE RATES (实时获取，离线回退默认值) =====
+const DEFAULT_RATES = { USD:6.8493, JPY:0.0430, GBP:9.1743, SGD:5.3763, THB:0.2132, HKD:0.8772, MXN:0.3922, CAD:4.9505, MYR:1.7212, EUR:8.0000, KRW:0.0046, AED:1.8650, BRL:1.3405, IDR:0.0004, CNY:1 };
+let RATES = {...DEFAULT_RATES};
+let rateSource = "默认汇率 (2026-04-10)";
+let USD_CNY = RATES.USD;
+
+async function fetchLiveRates() {
+  try {
+    const res = await fetch("https://api.exchangerate-api.com/v4/latest/CNY");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const r = data.rates;
+    // 转换: API返回 1 CNY = X 外币, 我们需要 1 外币 = X CNY
+    const needed = ["USD","JPY","GBP","SGD","THB","HKD","MXN","CAD","MYR","EUR","KRW","BRL","IDR"];
+    needed.forEach(c => { if (r[c]) RATES[c] = +(1/r[c]).toFixed(4); });
+    // AED: 用 USD 推算 (AED/USD 固定 3.6725)
+    if (r["AED"]) RATES.AED = +(1/r["AED"]).toFixed(4);
+    else if (r["USD"]) RATES.AED = +(RATES.USD / 3.6725).toFixed(4);
+    USD_CNY = RATES.USD;
+    updateHousingRates();
+    const date = data.date || new Date().toISOString().slice(0,10);
+    rateSource = "实时汇率 (" + date + ")";
+    updateRateStatus(true);
+  } catch(e) {
+    console.warn("汇率获取失败，使用默认值:", e);
+    updateRateStatus(false);
+  }
+}
+
+function updateHousingRates() {
+  for (const k in HOUSING) {
+    const h = HOUSING[k];
+    if (h.cur === "USD") h.rate = RATES.USD;
+    else if (RATES[h.cur] !== undefined) h.rate = RATES[h.cur];
+  }
+}
+
+function updateRateStatus(live) {
+  const DISPLAY_PAIRS = [
+    {code:"USD", label:"USD/CNY", decimals:4},
+    {code:"JPY", label:"JPY/CNY", decimals:4},
+    {code:"KRW", label:"KRW/CNY", decimals:4},
+    {code:"SGD", label:"SGD/CNY", decimals:4},
+    {code:"MYR", label:"MYR/CNY", decimals:4},
+    {code:"THB", label:"THB/CNY", decimals:4},
+    {code:"IDR", label:"IDR/CNY", decimals:4},
+    {code:"EUR", label:"EUR/CNY", decimals:4},
+  ];
+  // Header
+  const title = document.querySelector("#rate-panel .rate-title");
+  const badge = document.getElementById("rate-badge");
+  if (title) title.textContent = "💱 " + rateSource;
+  if (badge) {
+    badge.style.display = "inline";
+    if (live) { badge.textContent = "● 已同步"; badge.className = "rate-badge live"; }
+    else { badge.textContent = "● 离线"; badge.className = "rate-badge offline"; }
+  }
+  // Grid
+  const grid = document.getElementById("rate-grid");
+  if (!grid) return;
+  grid.innerHTML = DISPLAY_PAIRS.map(p => {
+    const v = RATES[p.code];
+    const display = v < 0.01 ? v.toFixed(6) : v < 1 ? v.toFixed(4) : v.toFixed(4);
+    return '<div class="rate-item"><span class="rate-pair">' + p.label + '</span><span class="rate-value">' + display + '</span></div>';
+  }).join("");
+}
+
+// ===== DATA =====
+
+// 单程交通价格(CNY) - 全服务航空·经济舱含税·企业差旅正常预订价 - 数据更新: 2026-04
+// 定价逻辑: 取市场正常预订中位价(非促销/非特价/非最低价), 基于往返票价×60%估算单程
+// 注: 深圳/广州→香港为高铁二等座票价（非机票）
+const FLIGHT_PRICES = {
+  "深圳": {"中国香港":75,"日本东京":3800,"韩国首尔":2500,"新加坡":2800,"泰国曼谷":2200,"马来西亚吉隆坡":2400,"印尼雅加达":3200,"阿联酋迪拜":4500,"沙特利雅得":5500,"美国洛杉矶":8000,"美国旧金山":8000,"英国伦敦":6500,"法国巴黎":6500,"德国法兰克福":6500},
+  "北京": {"中国香港":2000,"日本东京":3200,"韩国首尔":2200,"新加坡":3000,"泰国曼谷":2500,"马来西亚吉隆坡":2800,"印尼雅加达":3500,"阿联酋迪拜":4000,"沙特利雅得":5500,"美国洛杉矶":7500,"美国旧金山":7500,"英国伦敦":6000,"法国巴黎":6000,"德国法兰克福":6000},
+  "广州": {"中国香港":215}
+};
+
+// 酒店标准 (USD)
+const HOTEL_TIERS = {
+  "一档": {"中国香港":330,"高":250,"低":190},
+  "二档": {"中国香港":500,"高":370,"低":280}
+};
+const HIGH_HOTEL_CITIES = new Set(["英国伦敦","新加坡","沙特利雅得","日本东京","美国洛杉矶","美国旧金山","法国巴黎","德国法兰克福","阿联酋迪拜","韩国首尔"]);
+
+// 差旅补贴
+const TRAVEL_ALLOW = {
+  "中国香港":["CNY",300],
+  "英国伦敦":["USD",75],"法国巴黎":["USD",75],"美国洛杉矶":["USD",75],"美国旧金山":["USD",75],
+  "印尼雅加达":["USD",60],"新加坡":["USD",60],"泰国曼谷":["USD",60],"沙特利雅得":["USD",60],
+  "日本东京":["USD",60],"马来西亚吉隆坡":["USD",60],"韩国首尔":["USD",60],
+  "德国法兰克福":["USD",60],"阿联酋迪拜":["USD",60]
+};
+
+// 派驻 - 住房标准
+const HOUSING = {
+  "阿联酋迪拜":{"1br":10000,"2br":13600,"cur":"AED","rate":1.8650},
+  "巴西圣保罗":{"1br":5600,"2br":7200,"cur":"BRL","rate":1.3405},
+  "德国法兰克福":{"1br":1500,"2br":2300,"cur":"EUR","rate":8.0000},
+  "法国巴黎":{"1br":2000,"2br":3100,"cur":"EUR","rate":8.0000},
+  "韩国首尔":{"1br":1750000,"2br":4000000,"cur":"KRW","rate":0.0046},
+  "加拿大多伦多":{"1br":2700,"2br":3800,"cur":"CAD","rate":4.9505},
+  "马来西亚吉隆坡":{"1br":2100,"2br":3500,"cur":"MYR","rate":1.7212},
+  "美国纽约":{"1br":5800,"2br":8100,"cur":"USD","rate":USD_CNY},
+  "美国洛杉矶":{"1br":4100,"2br":5100,"cur":"USD","rate":USD_CNY},
+  "美国旧金山":{"1br":4100,"2br":5100,"cur":"USD","rate":USD_CNY},
+  "日本东京":{"1br":200000,"2br":290000,"cur":"JPY","rate":0.0430},
+  "泰国曼谷":{"1br":39000,"2br":60000,"cur":"THB","rate":0.2132},
+  "新加坡":{"1br":3500,"2br":5000,"cur":"SGD","rate":5.3763},
+  "印尼雅加达":{"1br":650,"2br":1100,"cur":"USD","rate":USD_CNY},
+  "英国伦敦":{"1br":2600,"2br":3500,"cur":"GBP","rate":9.1743},
+  "中国香港":{"1br":19000,"2br":28000,"cur":"HKD","rate":0.8772},
+  "墨西哥":{"1br":33000,"2br":46000,"cur":"MXN","rate":0.3922}
+};
+
+// 派驻 - 生活津贴 (TCI下调版)
+const LIVING = {
+  "中国香港":{"一档":11100,"二档":17400,"sp30一档":3330,"sp30二档":5220,"sp40一档":4440,"sp40二档":6960},
+  "法国巴黎":{"一档":6800,"二档":10600,"sp30一档":2040,"sp30二档":3180,"sp40一档":2720,"sp40二档":4240},
+  "德国法兰克福":{"一档":6200,"二档":9700,"sp30一档":1860,"sp30二档":2910,"sp40一档":2480,"sp40二档":3880},
+  "印尼雅加达":{"一档":1300,"二档":2000,"sp30一档":390,"sp30二档":600,"sp40一档":520,"sp40二档":800},
+  "日本东京":{"一档":6900,"二档":10800,"sp30一档":2070,"sp30二档":3240,"sp40一档":2760,"sp40二档":4320},
+  "马来西亚吉隆坡":{"一档":1100,"二档":1600,"sp30一档":330,"sp30二档":480,"sp40一档":440,"sp40二档":640},
+  "新加坡":{"一档":9900,"二档":15600,"sp30一档":2970,"sp30二档":4680,"sp40一档":3960,"sp40二档":6240},
+  "韩国首尔":{"一档":6700,"二档":10500,"sp30一档":2010,"sp30二档":3150,"sp40一档":2680,"sp40二档":4200},
+  "泰国曼谷":{"一档":4600,"二档":7200,"sp30一档":1380,"sp30二档":2160,"sp40一档":1840,"sp40二档":2880},
+  "阿联酋迪拜":{"一档":9200,"二档":14500,"sp30一档":2760,"sp30二档":4350,"sp40一档":3680,"sp40二档":5800},
+  "英国伦敦":{"一档":8100,"二档":12700,"sp30一档":2430,"sp30二档":3810,"sp40一档":3240,"sp40二档":5080},
+  "美国洛杉矶":{"一档":8100,"二档":12700,"sp30一档":2430,"sp30二档":3810,"sp40一档":3240,"sp40二档":5080},
+  "美国旧金山":{"一档":8100,"二档":12700,"sp30一档":2430,"sp30二档":3810,"sp40一档":3240,"sp40二档":5080},
+  "美国纽约":{"一档":8000,"二档":12600,"sp30一档":2400,"sp30二档":3780,"sp40一档":3200,"sp40二档":5040}
+};
+
+// 艰苦补贴
+const HARDSHIP = {
+  "土耳其伊斯坦布尔":{"一档":9700,"二档":21300,"三档":30500},
+  "马来西亚吉隆坡":{"一档":6100,"二档":13300,"三档":19100},
+  "印尼雅加达":{"一档":9700,"二档":21300,"三档":30500},
+  "波兰华沙":{"一档":3200,"二档":7100,"三档":10200},
+  "巴西圣保罗":{"一档":6100,"二档":13300,"三档":19100},
+  "泰国曼谷":{"一档":6100,"二档":13300,"三档":19100},
+  "阿联酋迪拜":{"一档":3200,"二档":7100,"三档":10200},
+  "墨西哥":{"一档":9700,"二档":21300,"三档":30500}
+};
+
+// ===== HELPERS =====
+// 管理职级 → 专业职级映射表
+const MGMT_LEVEL_MAP = {
+  "L1-1":10,"L1-2":11,
+  "L2-1":12,"L2-2":13,"L2-3":14,
+  "L3-1":15,"L3-2":16,"L3-3":17
+};
+function parseLevel(val) {
+  if (!val) return 11;
+  val = val.trim().toUpperCase();
+  if (MGMT_LEVEL_MAP[val] !== undefined) return MGMT_LEVEL_MAP[val];
+  const n = parseInt(val);
+  return isNaN(n) ? 11 : n;
+}
+function getTier(level) { return level <= 11 ? "一档" : level <= 14 ? "二档" : "三档"; }
+function fmt(n) { return n.toLocaleString("zh-CN", {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+function fmtInt(n) { return Math.round(n).toLocaleString("zh-CN"); }
+
+function getHotelRate(dest, tier) {
+  const t = HOTEL_TIERS[tier] || HOTEL_TIERS["一档"];
+  if (dest === "中国香港") return t["中国香港"];
+  return HIGH_HOTEL_CITIES.has(dest) ? t["高"] : t["低"];
+}
+
+function getTravelAllow(dest) {
+  const a = TRAVEL_ALLOW[dest];
+  if (!a) return 60 * USD_CNY;
+  return a[0] === "CNY" ? a[1] : a[1] * USD_CNY;
+}
+
+// ===== TRAVEL CALC =====
+function doCalcTravel(origin, dest, months, days, trips, level) {
+  const tier = getTier(level);
+  const hotelTier = level <= 11 ? "一档" : "二档";
+  const fp = (FLIGHT_PRICES[origin] || {})[dest];
+  if (fp === undefined) return null;
+  const hotelUSD = getHotelRate(dest, hotelTier);
+  const hotelCNY = hotelUSD * USD_CNY;
+  const allowCNY = getTravelAllow(dest);
+  const flightTotal = fp * 2 * trips;
+  const hotelTotal = hotelCNY * Math.max(days - trips, 0);
+  const allowTotal = allowCNY * days;
+  const total = flightTotal + hotelTotal + allowTotal;
+  return { tier, hotelTier, days, fp, hotelUSD, hotelCNY, allowCNY, flightTotal, hotelTotal, allowTotal, total };
+}
+
+// ===== DISPATCH CALC =====
+function doCalcDispatch(dest, months, family, level, salary) {
+  const tier = getTier(level);
+  const dispatchTier = level <= 11 ? "一档" : "二档";
+
+  // 生活津贴
+  const la = LIVING[dest] || {};
+  let livingMonthly = 0;
+  let livingBase = 0;
+  let livingSpouse = 0;
+  if (family === "仅本人") {
+    livingBase = la[dispatchTier] || 0;
+    livingMonthly = livingBase;
+  } else if (family === "本人+配偶") {
+    livingBase = la[dispatchTier] || 0;
+    livingSpouse = la["sp30" + dispatchTier] || Math.round(livingBase * 0.3);
+    livingMonthly = livingBase + livingSpouse;
+  } else {
+    livingBase = la[dispatchTier] || 0;
+    livingSpouse = la["sp40" + dispatchTier] || Math.round(livingBase * 0.4);
+    livingMonthly = livingBase + livingSpouse;
+  }
+
+  // 艰苦补贴
+  const ha = HARDSHIP[dest] || {};
+  const hardshipBase = ha[tier] || 0;
+  let hardshipExtra = 0;
+  if (hardshipBase > 0) {
+    if (family === "本人+配偶") hardshipExtra = Math.round(hardshipBase * 0.3);
+    else if (family === "本人+配偶+子女") hardshipExtra = Math.round(hardshipBase * 0.4);
+  }
+  const hardshipMonthly = hardshipBase + hardshipExtra;
+
+  // 住房补贴
+  const h = HOUSING[dest];
+  let housingCNY = 0, housingDetail = "";
+  if (h) {
+    const needBigRoom = family === "本人+配偶+子女";
+    const localAmt = needBigRoom ? h["2br"] : h["1br"];
+    housingCNY = Math.round(localAmt * h.rate * 100) / 100;
+    housingDetail = `${localAmt.toLocaleString()} ${h.cur} x ${h.rate}`;
+  }
+
+  // 月度/期间补贴
+  const monthlySubsidy = housingCNY + livingMonthly + hardshipMonthly;
+  const periodSubsidy = monthlySubsidy * months;
+
+  // 个税申报费用
+  const taxFilingFee = 60000;
+
+  // 税负平衡成本 (用员工总收入的15%估算)
+  const totalIncome = salary + periodSubsidy;
+  const taxEqualization = totalIncome * 0.15;
+
+  // 增加成本粗算
+  const totalCost = (periodSubsidy + taxEqualization + taxFilingFee) * (months / 12);
+
+  return {
+    tier, dispatchTier, livingBase, livingSpouse, livingMonthly,
+    hardshipBase, hardshipExtra, hardshipMonthly,
+    housingCNY, housingDetail,
+    monthlySubsidy, periodSubsidy,
+    taxFilingFee, taxEqualization, totalCost
+  };
+}
+
+// ===== UI =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['travel','dispatch','ltbs','compare'][i] === tab);
+  });
+  ['travel','dispatch','ltbs','compare'].forEach(t => {
+    document.getElementById('panel-' + t).classList.toggle('hidden', t !== tab);
+  });
+}
+
+function populateSelects() {
+  const origins = Object.keys(FLIGHT_PRICES);
+  const allDests = new Set();
+  origins.forEach(o => Object.keys(FLIGHT_PRICES[o]).forEach(d => allDests.add(d)));
+  const dests = [...allDests].sort();
+  const dispatchDests = Object.keys(HOUSING).sort();
+
+  ['t-origin', 'l-origin', 'c-origin'].forEach(id => {
+    const s = document.getElementById(id);
+    origins.forEach(o => { s.add(new Option(o, o)); });
+  });
+  ['t-dest', 'l-dest'].forEach(id => {
+    const s = document.getElementById(id);
+    dests.forEach(d => { s.add(new Option(d, d)); });
+    s.value = "泰国曼谷";
+  });
+  // compare dest: only those with both flight and dispatch data
+  const cDestSel = document.getElementById('c-dest');
+  dests.forEach(d => { cDestSel.add(new Option(d, d)); });
+  cDestSel.value = "泰国曼谷";
+
+  const ds = document.getElementById('d-dest');
+  dispatchDests.forEach(d => { ds.add(new Option(d, d)); });
+  ds.value = "泰国曼谷";
+
+  document.getElementById('t-origin').addEventListener('change', () => updateDests('t'));
+  document.getElementById('l-origin').addEventListener('change', () => updateDests('l'));
+  document.getElementById('c-origin').addEventListener('change', () => updateDests('c'));
+}
+
+function updateDests(prefix) {
+  const origin = document.getElementById(prefix + '-origin').value;
+  const s = document.getElementById(prefix + '-dest');
+  const cur = s.value;
+  s.innerHTML = '';
+  const available = Object.keys(FLIGHT_PRICES[origin] || {}).sort();
+  available.forEach(d => s.add(new Option(d, d)));
+  if ([...s.options].some(o => o.value === cur)) s.value = cur;
+}
+
+function calcTravel() {
+  const origin = document.getElementById('t-origin').value;
+  const dest = document.getElementById('t-dest').value;
+  const months = parseInt(document.getElementById('t-months').value);
+  const daysVal = document.getElementById('t-days').value;
+  const days = daysVal ? parseInt(daysVal) : months * 10;
+  const tripsVal = document.getElementById('t-trips').value;
+  const trips = tripsVal ? parseInt(tripsVal) : months;
+  const level = parseLevel(document.getElementById('t-level').value);
+  const r = doCalcTravel(origin, dest, months, days, trips, level);
+  const panel = document.getElementById('travel-result');
+  if (!r) { panel.innerHTML = '<div class="card" style="color:var(--danger)">未找到该路线的交通数据</div>'; panel.classList.add('show'); return; }
+
+  panel.innerHTML = `
+    <div class="result-total" style="background:linear-gradient(135deg, var(--primary), #4285f4)">
+      <div class="label">国际差旅 · 增加成本粗算</div>
+      <div class="amount">¥ ${fmt(r.total)}</div>
+      <div class="label">${origin} → ${dest} · ${months}个月 · ${r.hotelTier}</div>
+    </div>
+    <div class="card">
+      <div class="info-row">
+        <span class="info-chip">📅 出差 <strong>${r.days}天</strong></span>
+        <span class="info-chip">🔄 往返 <strong>${trips}次</strong></span>
+        <span class="info-chip">🏷️ 住宿<strong>${r.hotelTier}</strong></span>
+      </div>
+      <table class="result-table">
+        <thead><tr><th>费用项目</th><th>标准</th><th style="text-align:right">金额 (CNY)</th></tr></thead>
+        <tbody>
+          <tr><td>🚄 往返交通</td><td class="sub">¥${fmtInt(r.fp)}/单程 x 2 x ${trips}次</td><td class="amount">¥ ${fmt(r.flightTotal)}</td></tr>
+          <tr><td>🏨 酒店住宿</td><td class="sub">$${r.hotelUSD}/晚 x ${USD_CNY} = ¥${fmt(r.hotelCNY)}/晚 x ${Math.max(r.days-trips,0)}晚</td><td class="amount">¥ ${fmt(r.hotelTotal)}</td></tr>
+          <tr><td>🍽️ 差旅补贴</td><td class="sub">¥${fmt(r.allowCNY)}/天 x ${r.days}天</td><td class="amount">¥ ${fmt(r.allowTotal)}</td></tr>
+          <tr style="background:var(--primary-light);font-weight:700"><td>💰 增加成本粗算</td><td></td><td class="amount" style="color:var(--primary);font-size:16px">¥ ${fmt(r.total)}</td></tr>
+        </tbody>
+      </table>
+      <div class="note-box">⚠️ 以上为增加成本粗算，不含其他可能产生的费用。实际费用以审批为准。<br>📌 交通费用均为参考数据，实际费用请参考差旅预订平台的价格。</div>
+    </div>`;
+  panel.classList.add('show');
+}
+
+function calcDispatch() {
+  const dest = document.getElementById('d-dest').value;
+  const months = parseInt(document.getElementById('d-months').value);
+  const family = document.getElementById('d-family').value;
+  const level = parseLevel(document.getElementById('d-level').value);
+  const salary = parseFloat(document.getElementById('d-salary').value);
+  const r = doCalcDispatch(dest, months, family, level, salary);
+  const panel = document.getElementById('dispatch-result');
+  const hasHardship = r.hardshipBase > 0;
+
+  panel.innerHTML = `
+    <div class="result-total" style="background:linear-gradient(135deg,#0d904f,#34a853)">
+      <div class="label">国际派驻 · 增加成本粗算</div>
+      <div class="amount">¥ ${fmt(r.totalCost)}</div>
+      <div class="label">${dest} · ${months}个月 · ${family} · ${r.dispatchTier}</div>
+    </div>
+    <div class="card">
+      <div class="info-row">
+        <span class="info-chip">📍 <strong>${dest}</strong></span>
+        <span class="info-chip">📅 <strong>${months}个月</strong></span>
+        <span class="info-chip">👨‍👩‍👧 <strong>${family}</strong></span>
+        <span class="info-chip">🏷️ <strong>${r.dispatchTier}</strong></span>
+      </div>
+      <table class="result-table">
+        <thead><tr><th>补贴项目</th><th>明细</th><th style="text-align:right">月度金额 (CNY)</th></tr></thead>
+        <tbody>
+          <tr><td>🏠 住房补贴</td><td class="sub">${r.housingDetail}</td><td class="amount">¥ ${fmt(r.housingCNY)}</td></tr>
+          <tr><td>🍽️ 生活津贴</td><td class="sub">员工 ¥${fmtInt(r.livingBase)}${r.livingSpouse > 0 ? ' + 家属 ¥' + fmtInt(r.livingSpouse) : ''}</td><td class="amount">¥ ${fmt(r.livingMonthly)}</td></tr>
+          <tr><td>🏔️ 艰苦补贴</td><td class="sub">${hasHardship ? '员工 ¥'+fmtInt(r.hardshipBase)+(r.hardshipExtra>0?' + 家属 ¥'+fmtInt(r.hardshipExtra):'') : '不适用（发达国家/地区）'}</td><td class="amount">${hasHardship ? '¥ '+fmt(r.hardshipMonthly) : '-'}</td></tr>
+          <tr style="background:var(--success-light);font-weight:700"><td>💰 月度补贴合计</td><td></td><td class="amount" style="color:var(--success);font-size:16px">¥ ${fmt(r.monthlySubsidy)}</td></tr>
+        </tbody>
+      </table>
+      <table class="result-table" style="margin-top:16px">
+        <thead><tr><th>成本汇总</th><th style="text-align:right">金额 (CNY)</th></tr></thead>
+        <tbody>
+          <tr><td>📊 补贴小计（税后）（${months}个月）</td><td class="amount">¥ ${fmt(r.periodSubsidy)}</td></tr>
+          <tr><td>🧾 税负平衡成本（员工总收入的15%估算）</td><td class="amount">¥ ${fmt(r.taxEqualization)}</td></tr>
+          <tr><td>📋 个税申报费用</td><td class="amount">¥ ${fmtInt(r.taxFilingFee)}</td></tr>
+          <tr style="background:var(--success-light);font-weight:700"><td>💰 增加成本粗算</td><td class="amount" style="color:var(--success);font-size:16px">¥ ${fmt(r.totalCost)}</td></tr>
+        </tbody>
+      </table>
+      <div class="note-box">⚠️ 以上为增加成本粗算。税负平衡按员工总收入的15%估算（实际12%-18%不等）。各国税负差异较大，具体以实际产生为准。</div>
+    </div>`;
+  panel.classList.add('show');
+}
+
+function calcLTBS() {
+  const origin = document.getElementById('l-origin').value;
+  const dest = document.getElementById('l-dest').value;
+  const months = parseInt(document.getElementById('l-months').value);
+  const daysVal = document.getElementById('l-days').value;
+  const days = daysVal ? parseInt(daysVal) : months * 10;
+  const tripsVal = document.getElementById('l-trips').value;
+  const trips = tripsVal ? parseInt(tripsVal) : months;
+  const level = parseLevel(document.getElementById('l-level').value);
+
+  // LTBS基于差旅成本的85%
+  const t = doCalcTravel(origin, dest, months, days, trips, level);
+  const panel = document.getElementById('ltbs-result');
+  if (!t) { panel.innerHTML = '<div class="card" style="color:var(--danger)">未找到该路线的交通数据</div>'; panel.classList.add('show'); return; }
+
+  const ltbsTotal = t.total * 0.85;
+
+  panel.innerHTML = `
+    <div class="result-total" style="background:linear-gradient(135deg, var(--purple), #a855f7)">
+      <div class="label">LTBS · 成本粗算</div>
+      <div class="amount">¥ ${fmt(ltbsTotal)}</div>
+      <div class="label">${origin} → ${dest} · ${months}个月 · 约为差旅成本的85%</div>
+    </div>
+    <div class="card">
+      <div class="info-row">
+        <span class="info-chip">📅 出差 <strong>${days}天</strong></span>
+        <span class="info-chip">🔄 往返 <strong>${trips}次</strong></span>
+        <span class="info-chip">🏷️ 住宿<strong>${t.hotelTier}</strong></span>
+      </div>
+      <table class="result-table">
+        <thead><tr><th>计算过程</th><th>标准</th><th style="text-align:right">金额 (CNY)</th></tr></thead>
+        <tbody>
+          <tr><td>🚄 往返交通（差旅）</td><td class="sub">¥${fmtInt(t.fp)}/单程 x 2 x ${trips}次</td><td class="amount">¥ ${fmt(t.flightTotal)}</td></tr>
+          <tr><td>🏨 酒店住宿（差旅）</td><td class="sub">$${t.hotelUSD}/晚 x ${USD_CNY} = ¥${fmt(t.hotelCNY)}/晚 x ${Math.max(days-trips,0)}晚</td><td class="amount">¥ ${fmt(t.hotelTotal)}</td></tr>
+          <tr><td>🍽️ 差旅补贴（差旅）</td><td class="sub">¥${fmt(t.allowCNY)}/天 x ${days}天</td><td class="amount">¥ ${fmt(t.allowTotal)}</td></tr>
+          <tr style="background:var(--bg)"><td>📊 国际差旅成本粗算</td><td></td><td class="amount">¥ ${fmt(t.total)}</td></tr>
+          <tr style="background:var(--purple-light);font-weight:700"><td>💰 LTBS成本粗算（× 85%）</td><td class="sub">¥${fmt(t.total)} x 85%</td><td class="amount" style="color:var(--purple);font-size:16px">¥ ${fmt(ltbsTotal)}</td></tr>
+        </tbody>
+      </table>
+      <table class="result-table" style="margin-top:16px">
+        <tbody>
+          <tr><td>💡 相比国际差旅节省</td><td class="amount" style="color:var(--success)">¥ ${fmt(t.total - ltbsTotal)} (15%)</td></tr>
+        </tbody>
+      </table>
+      <div class="note-box">⚠️ LTBS总成本约为国际差旅的85%。实际包含：每月生活津贴（对齐国际派驻"员工档"）、住房支持（短租公寓）、往返交通，以及公司承担的个税额外成本。<br>📌 交通费用均为参考数据，实际费用请参考差旅预订平台的价格。</div>
+    </div>`;
+  panel.classList.add('show');
+}
+
+function calcCompare() {
+  const origin = document.getElementById('c-origin').value;
+  const dest = document.getElementById('c-dest').value;
+  const months = parseInt(document.getElementById('c-months').value);
+  const level = parseLevel(document.getElementById('c-level').value);
+  const family = document.getElementById('c-family').value;
+  const salary = parseFloat(document.getElementById('c-salary').value);
+  const daysVal = document.getElementById('c-days').value;
+  const days = daysVal ? parseInt(daysVal) : months * 10;
+  const trips = months;
+
+  const t = doCalcTravel(origin, dest, months, days, trips, level);
+  const d = doCalcDispatch(dest, months, family, level, salary);
+  const panel = document.getElementById('compare-result');
+
+  if (!t) { panel.innerHTML = '<div class="card" style="color:var(--danger)">未找到该路线的交通数据，无法对比</div>'; panel.classList.add('show'); return; }
+
+  const ltbsTotal = t.total * 0.85;
+  const costs = [
+    { name: "国际差旅", total: t.total },
+    { name: "LTBS", total: ltbsTotal },
+    { name: "国际派驻", total: d.totalCost }
+  ];
+  costs.sort((a, b) => a.total - b.total);
+  const cheapest = costs[0].name;
+  const mostExpensive = costs[2].name;
+  const savings = costs[2].total - costs[0].total;
+
+  panel.innerHTML = `
+    <div class="result-total" style="background:linear-gradient(135deg,#e37400,#fbbc04)">
+      <div class="label">三方案对比：${origin} → ${dest} · ${months}个月</div>
+      <div class="amount" style="font-size:26px">${cheapest} 最经济，比${mostExpensive}节省 ¥${fmt(savings)}</div>
+    </div>
+    <div class="compare-grid">
+      <div class="card">
+        <div class="card-title"><span class="icon">✈️</span> 国际差旅 ${cheapest === '国际差旅' ? '<span class="badge badge-success" style="margin-left:auto">最经济</span>' : ''}</div>
+        <table class="result-table">
+          <tr><td>往返交通</td><td class="amount">¥ ${fmt(t.flightTotal)}</td></tr>
+          <tr><td>酒店住宿</td><td class="amount">¥ ${fmt(t.hotelTotal)}</td></tr>
+          <tr><td>差旅补贴</td><td class="amount">¥ ${fmt(t.allowTotal)}</td></tr>
+          <tr style="background:var(--primary-light);font-weight:700"><td>合计</td><td class="amount" style="color:var(--primary)">¥ ${fmt(t.total)}</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="icon">🔄</span> LTBS ${cheapest === 'LTBS' ? '<span class="badge badge-success" style="margin-left:auto">最经济</span>' : ''}</div>
+        <table class="result-table">
+          <tr><td>差旅成本基数</td><td class="amount">¥ ${fmt(t.total)}</td></tr>
+          <tr><td>LTBS折算 (x85%)</td><td class="amount" style="color:var(--purple)">x 0.85</td></tr>
+          <tr style="background:var(--purple-light);font-weight:700"><td>合计</td><td class="amount" style="color:var(--purple)">¥ ${fmt(ltbsTotal)}</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="icon">🏠</span> 国际派驻 (${family}) ${cheapest === '国际派驻' ? '<span class="badge badge-success" style="margin-left:auto">最经济</span>' : ''}</div>
+        <table class="result-table">
+          <tr><td>补贴小计</td><td class="amount">¥ ${fmt(d.periodSubsidy)}</td></tr>
+          <tr><td>税负平衡</td><td class="amount">¥ ${fmt(d.taxEqualization)}</td></tr>
+          <tr><td>个税申报</td><td class="amount">¥ ${fmtInt(d.taxFilingFee)}</td></tr>
+          <tr style="background:var(--success-light);font-weight:700"><td>合计</td><td class="amount" style="color:var(--success)">¥ ${fmt(d.totalCost)}</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="note-box">⚠️ 差旅和LTBS按出差${days}天计算；派驻仅含补贴+税负成本(税后)。实际决策需综合考虑业务需求、签证可行性、员工意愿等因素。<br>📌 交通费用均为参考数据，实际费用请参考差旅预订平台的价格。</div>`;
+  panel.classList.add('show');
+}
+
+// Init
+populateSelects();
+updateRateStatus(false);
+fetchLiveRates();
+</script>
+</body>
+</html>
