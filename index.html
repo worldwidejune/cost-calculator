@@ -95,6 +95,27 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
 .info-chip strong { color: var(--primary); }
 .special-notes { margin-top: 16px; font-size: 13px; color: var(--text-secondary); }
 .special-notes li { margin-bottom: 4px; }
+/* 签证信息卡片 */
+.visa-tip { margin-top: 12px; padding: 14px 16px; border-radius: var(--radius); border: 1px solid #d1d5db; background: linear-gradient(135deg, #fefce8 0%, #fff7ed 100%); font-size: 13px; line-height: 1.7; display: none; }
+.visa-tip.show { display: block; }
+.visa-tip .visa-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; color: var(--text); }
+.visa-tip .visa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+@media (max-width: 600px) { .visa-tip .visa-grid { grid-template-columns: 1fr; } }
+.visa-tip .visa-item { display: flex; gap: 6px; }
+.visa-tip .visa-label { color: var(--text-secondary); white-space: nowrap; min-width: 72px; }
+.visa-tip .visa-val { color: var(--text); font-weight: 500; }
+.visa-tip .visa-types { margin-top: 10px; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+.visa-tip .visa-type-row { margin-bottom: 6px; padding: 6px 10px; border-radius: 8px; background: rgba(255,255,255,0.7); }
+.visa-tip .visa-type-name { font-weight: 600; color: var(--primary); }
+.visa-tip .visa-type-detail { color: var(--text-secondary); font-size: 12px; }
+.visa-tip .visa-note { margin-top: 8px; font-size: 12px; color: #92400e; }
+.visa-tip .visa-link { font-size: 12px; margin-top: 6px; }
+.visa-tip .visa-link a { color: var(--primary); text-decoration: underline; }
+.visa-badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 6px; vertical-align: middle; }
+.visa-badge-free { background: #dcfce7; color: #166534; }
+.visa-badge-evisa { background: #dbeafe; color: #1e40af; }
+.visa-badge-visa { background: #fee2e2; color: #991b1b; }
+.visa-badge-landing { background: #fef3c7; color: #92400e; }
 </style>
 </head>
 <body>
@@ -132,6 +153,7 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
         <div class="form-group">
           <label>目的地</label>
           <select id="t-dest"></select>
+          <div id="t-visa-tip" class="visa-tip"></div>
         </div>
         <div class="form-group">
           <label>时长 (月)</label>
@@ -178,6 +200,7 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
         <div class="form-group">
           <label>派驻地</label>
           <select id="d-dest"></select>
+          <div id="d-visa-tip" class="visa-tip"></div>
         </div>
         <div class="form-group">
           <label>派驻时长 (月)</label>
@@ -221,6 +244,7 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
         <div class="form-group">
           <label>目的地</label>
           <select id="l-dest"></select>
+          <div id="l-visa-tip" class="visa-tip"></div>
         </div>
         <div class="form-group">
           <label>时长 (月)</label>
@@ -260,6 +284,7 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
         <div class="form-group">
           <label>目的地</label>
           <select id="c-dest"></select>
+          <div id="c-visa-tip" class="visa-tip"></div>
         </div>
         <div class="form-group">
           <label>时长 (月)</label>
@@ -438,6 +463,188 @@ const HARDSHIP = {
   "墨西哥":{"一档":9700,"二档":21300,"三档":30500}
 };
 
+// ===== 签证政策数据 (中国普通护照) - 数据更新: 2026-04 =====
+// 来源: 外交部领事服务网、各国移民局官网、中外互免签证协定一览表
+const VISA_INFO = {
+  "中国香港": {
+    status: "permit", badge: "通行证", badgeClass: "visa-badge-evisa",
+    summary: "需持往来港澳通行证+有效签注入境",
+    types: [
+      {name: "个人游 (G签)", detail: "开放城市居民可申请，每次停留7天"},
+      {name: "商务签注", detail: "3个月/1年 单次或多次，每次停留7天"},
+      {name: "护照过境", detail: "持有效护照+第三国机票/签证，可免签停留7天"}
+    ],
+    note: "中国大陆居民前往香港不使用护照，需办理港澳通行证+签注。",
+    link: "https://www.immd.gov.hk/hkt/services/visas/visit-transit/visit-visa-entry-permit.html"
+  },
+  "日本东京": {
+    status: "visa", badge: "需签证", badgeClass: "visa-badge-visa",
+    summary: "不免签，需提前申请签证",
+    types: [
+      {name: "单次商务/旅游签证", detail: "停留15天或30天，需通过指定旅行社递交"},
+      {name: "三年多次签证", detail: "每次停留30天，有效期3年"},
+      {name: "五年多次签证", detail: "每次停留90天，有效期5年，需满足收入要求"}
+    ],
+    note: "商务签证需日方企业提供邀请函（招聘理由书）。签证申请必须通过日本驻华使领馆指定代理机构办理。",
+    link: "https://www.cn.emb-japan.go.jp/itpr_zh/visa_main.html"
+  },
+  "韩国首尔": {
+    status: "visa", badge: "需签证", badgeClass: "visa-badge-visa",
+    summary: "韩国本岛需签证（济州岛免签30天）",
+    types: [
+      {name: "C-3短期商务签证", detail: "单次入境，停留90天以内，需韩方邀请函"},
+      {name: "五年/十年多次签证", detail: "符合条件者（收入/出行记录），每次停留90天"},
+      {name: "济州岛免签", detail: "仅限济州岛，免签停留30天"},
+      {name: "过境免签", detail: "持有效OECD国家签证，可过境停留72-120小时"}
+    ],
+    note: "韩国本岛（首尔、釜山等）仍需提前申请签证。",
+    link: "https://overseas.mofa.go.kr/cn-zh/index.do"
+  },
+  "新加坡": {
+    status: "free", badge: "免签30天", badgeClass: "visa-badge-free",
+    summary: "互免签证，免签停留30天",
+    types: [
+      {name: "互免签证", detail: "2024年2月起生效，每次停留30天，可多次入境"},
+      {name: "短期商务", detail: "免签即可涵盖短期商务活动、会议、考察"},
+      {name: "长期工作", detail: "需另行申请EP/SP等工作准证"}
+    ],
+    note: "入境需护照有效期≥6个月、返程机票、足够资金证明。短期商务免签即可，无需另申商务签。",
+    link: "https://www.ica.gov.sg/enter-transit-depart/entering-singapore"
+  },
+  "泰国曼谷": {
+    status: "free", badge: "免签30天", badgeClass: "visa-badge-free",
+    summary: "互免签证，免签停留30天",
+    types: [
+      {name: "互免签证", detail: "2024年3月起生效，每次停留30天，可多次入境"},
+      {name: "Non-B商务签证", detail: "单次/多次入境，停留90天，需泰方公司邀请"},
+      {name: "工作签证", detail: "需先获得Non-B签证后在泰申请工作许可证"}
+    ],
+    note: "免签入境建议携带10,000泰铢（约¥2,000）等值现金及返程机票。有偿工作需办工作签证。",
+    link: "https://www.thaiembassy.com/thailand-visa"
+  },
+  "马来西亚吉隆坡": {
+    status: "free", badge: "免签30天", badgeClass: "visa-badge-free",
+    summary: "互免签证，免签停留30天",
+    types: [
+      {name: "互免签证", detail: "2025年7月起正式互免，每次停留30天"},
+      {name: "商务签证", detail: "需马方公司邀请函，单次/多次可选"},
+      {name: "工作签证 (EP)", detail: "长期工作需通过雇主申请Employment Pass"}
+    ],
+    note: "入境需护照有效期≥6个月、返程机票和酒店预订。",
+    link: "https://www.imi.gov.my/"
+  },
+  "印尼雅加达": {
+    status: "landing", badge: "落地签", badgeClass: "visa-badge-landing",
+    summary: "落地签(VOA)，停留30天，可延期30天",
+    types: [
+      {name: "落地签 (VOA)", detail: "停留30天，可延期一次30天，费用约50万印尼盾（约¥230）"},
+      {name: "电子落地签 (e-VOA)", detail: "可在线提前申请，加快入境通关"},
+      {name: "B211商务签证", detail: "停留60天，可延期，需担保人/邀请函，适合长期出差"},
+      {name: "商务多次签证", detail: "有效期1年，每次停留60天"}
+    ],
+    note: "落地签仅限旅游和短期商务。超过30天的商务活动建议提前办理B211签证。",
+    link: "https://molina.imigrasi.go.id/"
+  },
+  "阿联酋迪拜": {
+    status: "free", badge: "免签30天", badgeClass: "visa-badge-free",
+    summary: "互免签证，免签停留30天，可延期30天",
+    types: [
+      {name: "互免签证", detail: "2018年起生效，每次停留30天，可延期30天，多次入境"},
+      {name: "短期商务", detail: "免签即可涵盖短期商务活动"},
+      {name: "工作签证", detail: "长期工作需雇主担保申请工作居留签证"}
+    ],
+    note: "入境需护照有效期≥6个月。免签期内可多次入出境。",
+    link: "https://smartservices.icp.gov.ae/echannels/web/client/default.html"
+  },
+  "沙特利雅得": {
+    status: "evisa", badge: "电子签", badgeClass: "visa-badge-evisa",
+    summary: "需申请电子签证(eVisa)，一年多次入境",
+    types: [
+      {name: "电子旅游签 (eVisa)", detail: "在线申请，一年多次入境，每次停留90天，累计不超过180天"},
+      {name: "商务签证", detail: "需沙方公司邀请及商会认证，单次或多次入境，每次停留90天"},
+      {name: "工作签证", detail: "需沙方雇主担保，流程较长"}
+    ],
+    note: "电子签费用约535沙特里亚尔（约¥1,000，含保险）。eVisa可用于旅游及短期商务访问。",
+    link: "https://visa.visitsaudi.com/"
+  },
+  "美国洛杉矶": {
+    status: "visa", badge: "需签证", badgeClass: "visa-badge-visa",
+    summary: "不免签，需提前申请B1/B2签证",
+    types: [
+      {name: "B1商务签证", detail: "通常十年多次入境，每次停留由入境官决定（一般1-6个月）"},
+      {name: "B1/B2联合签证", detail: "同时涵盖商务+旅游，十年多次，是最常见的签证类型"},
+      {name: "EVUS登记", detail: "持十年B签需每两年更新EVUS电子系统登记"}
+    ],
+    note: "签证费$185。需在线填DS-160表格→缴费→预约使领馆面签。企业差旅通常申请B1/B2联合签证。",
+    link: "https://www.ustraveldocs.com/cn/"
+  },
+  "美国旧金山": {
+    status: "visa", badge: "需签证", badgeClass: "visa-badge-visa",
+    summary: "不免签，需提前申请B1/B2签证",
+    types: [
+      {name: "B1商务签证", detail: "通常十年多次入境，每次停留由入境官决定（一般1-6个月）"},
+      {name: "B1/B2联合签证", detail: "同时涵盖商务+旅游，十年多次，是最常见的签证类型"},
+      {name: "EVUS登记", detail: "持十年B签需每两年更新EVUS电子系统登记"}
+    ],
+    note: "签证费$185。需在线填DS-160表格→缴费→预约使领馆面签。企业差旅通常申请B1/B2联合签证。",
+    link: "https://www.ustraveldocs.com/cn/"
+  },
+  "英国伦敦": {
+    status: "visa", badge: "需签证", badgeClass: "visa-badge-visa",
+    summary: "不免签，需申请标准访客签证",
+    types: [
+      {name: "标准访客签证 (2年)", detail: "涵盖旅游+商务，多次入境，每次停留≤6个月，费用£115"},
+      {name: "长期访客签证 (5年)", detail: "多次入境，每次停留≤6个月，费用£400"},
+      {name: "长期访客签证 (10年)", detail: "多次入境，每次停留≤6个月，费用£771"}
+    ],
+    note: "标准访客签证即可涵盖短期商务活动（会议、培训、签约等）。在英国每次连续停留不得超过6个月。",
+    link: "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+  },
+  "法国巴黎": {
+    status: "visa", badge: "需申根签", badgeClass: "visa-badge-visa",
+    summary: "需申请申根签证，每180天内最多停留90天",
+    types: [
+      {name: "短期申根签证 (C类)", detail: "每180天内停留≤90天，签证费€90"},
+      {name: "多次申根签证", detail: "首次通常单次入境；有良好记录可获1/2/5年多次"},
+      {name: "申根商务签证", detail: "需法方邀请函、公司证明，通过中智签证(TLScontact)递交"}
+    ],
+    note: "持法国申根签可通行27个申根国。签证费€90。通过中智签证中心递交申请。",
+    link: "https://france-visas.gouv.fr/zh/web/cn"
+  },
+  "德国法兰克福": {
+    status: "visa", badge: "需申根签", badgeClass: "visa-badge-visa",
+    summary: "需申请申根签证，每180天内最多停留90天",
+    types: [
+      {name: "短期申根签证 (C类)", detail: "每180天内停留≤90天，签证费€90"},
+      {name: "多次申根签证", detail: "根据申请记录，可获1-5年多次入境"},
+      {name: "申根商务签证", detail: "需德方企业邀请函、资金证明，通过中智签证(TLScontact)递交"}
+    ],
+    note: "持德国申根签可通行27个申根国。签证费€90。通过中智签证中心递交申请。",
+    link: "https://china.diplo.de/cn-zh/service/-/1343426"
+  }
+};
+
+// 渲染签证提示卡片
+function renderVisaTip(dest, tipElId) {
+  const el = document.getElementById(tipElId);
+  if (!el) return;
+  const info = VISA_INFO[dest];
+  if (!info) { el.classList.remove('show'); el.innerHTML = ''; return; }
+
+  let typesHtml = info.types.map(t =>
+    `<div class="visa-type-row"><span class="visa-type-name">${t.name}</span><br><span class="visa-type-detail">${t.detail}</span></div>`
+  ).join('');
+
+  el.innerHTML = `
+    <div class="visa-title">🛂 签证要求 <span class="visa-badge ${info.badgeClass}">${info.badge}</span></div>
+    <div style="margin-bottom:8px">${info.summary}</div>
+    <div class="visa-types">${typesHtml}</div>
+    ${info.note ? `<div class="visa-note">⚠️ ${info.note}</div>` : ''}
+    ${info.link ? `<div class="visa-link">🔗 <a href="${info.link}" target="_blank">官方签证信息</a></div>` : ''}
+  `;
+  el.classList.add('show');
+}
+
 // ===== HELPERS =====
 // 管理职级 → 专业职级映射表
 const MGMT_LEVEL_MAP = {
@@ -588,6 +795,18 @@ function populateSelects() {
   document.getElementById('t-origin').addEventListener('change', () => updateDests('t'));
   document.getElementById('l-origin').addEventListener('change', () => updateDests('l'));
   document.getElementById('c-origin').addEventListener('change', () => updateDests('c'));
+
+  // 绑定签证提示：目的地变化时自动更新
+  document.getElementById('t-dest').addEventListener('change', e => renderVisaTip(e.target.value, 't-visa-tip'));
+  document.getElementById('l-dest').addEventListener('change', e => renderVisaTip(e.target.value, 'l-visa-tip'));
+  document.getElementById('c-dest').addEventListener('change', e => renderVisaTip(e.target.value, 'c-visa-tip'));
+  document.getElementById('d-dest').addEventListener('change', e => renderVisaTip(e.target.value, 'd-visa-tip'));
+
+  // 初始化默认目的地的签证提示
+  renderVisaTip("泰国曼谷", "t-visa-tip");
+  renderVisaTip("泰国曼谷", "l-visa-tip");
+  renderVisaTip("泰国曼谷", "c-visa-tip");
+  renderVisaTip("泰国曼谷", "d-visa-tip");
 }
 
 function updateDests(prefix) {
@@ -598,6 +817,7 @@ function updateDests(prefix) {
   const available = Object.keys(FLIGHT_PRICES[origin] || {}).sort();
   available.forEach(d => s.add(new Option(d, d)));
   if ([...s.options].some(o => o.value === cur)) s.value = cur;
+  renderVisaTip(s.value, prefix + '-visa-tip');
 }
 
 function calcTravel() {
