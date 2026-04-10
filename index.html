@@ -216,7 +216,6 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
         <div class="form-group">
           <label>派驻地</label>
           <select id="d-dest"></select>
-          <div id="d-visa-tip" class="visa-tip"></div>
         </div>
         <div class="form-group">
           <label>派驻时长 (月)</label>
@@ -260,7 +259,6 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
         <div class="form-group">
           <label>目的地</label>
           <select id="l-dest"></select>
-          <div id="l-visa-tip" class="visa-tip"></div>
         </div>
         <div class="form-group">
           <label>时长 (月)</label>
@@ -559,18 +557,18 @@ const VISA_INFO = {
     entryReqs: ["护照有效期≥6个月", "返程机票", "酒店预订"]
   },
   "印尼雅加达": {
-    status: "landing", badge: "落地签", badgeClass: "visa-badge-landing",
-    summary: "落地签(VOA)，停留30天，可延期30天",
+    status: "visa", badge: "建议商务签", badgeClass: "visa-badge-visa",
+    summary: "⚠️ 当地政府稽查严格，强烈建议办理商务签证入境，不推荐落地签或电子签",
     types: [
-      {name: "落地签 (VOA)", detail: "停留30天，可延期一次30天，费用约¥230", maxStay: 30, scenario: "biz"},
-      {name: "电子落地签 (e-VOA)", detail: "可在线提前申请，加快入境通关", maxStay: 30, scenario: "biz"},
-      {name: "VOA延期", detail: "落地签可在当地延期一次，延期后共停留60天", maxStay: 60, scenario: "biz"},
-      {name: "B211商务签证", detail: "停留60天，可延期，需担保人/邀请函，适合长期出差", maxStay: 60, scenario: "biz"},
-      {name: "商务多次签证", detail: "有效期1年，每次停留60天", maxStay: 60, scenario: "biz"}
+      {name: "B211商务签证 ⭐推荐", detail: "停留60天，可延期，需担保人/邀请函，适合商务出差", maxStay: 60, scenario: "biz"},
+      {name: "商务多次签证 ⭐推荐", detail: "有效期1年，每次停留60天，频繁出差首选", maxStay: 60, scenario: "biz"},
+      {name: "落地签 (VOA) ⚠️不推荐", detail: "停留30天，费用约¥230。当地政府对持落地签从事商务活动稽查严格，存在罚款/遣返风险", maxStay: 30, scenario: "travel"},
+      {name: "电子落地签 (e-VOA) ⚠️不推荐", detail: "可在线提前申请，但与落地签同等性质，不建议用于商务出差", maxStay: 30, scenario: "travel"}
     ],
-    note: "落地签仅限旅游和短期商务。超过30天的商务活动建议提前办理B211签证。",
+    note: "⚠️ 印尼当地移民局对外国人商务活动稽查非常严格，持落地签/电子签从事商务活动可能面临罚款、拘留或遣返。公司商务出差请务必提前办理B211商务签证或商务多次签证。",
     link: "https://molina.imigrasi.go.id/",
-    entryReqs: ["护照有效期≥6个月", "返程机票", "落地签费用约¥230（现场支付）"]
+    entryReqs: ["商务签证（B211或多次）", "护照有效期≥6个月", "返程机票", "印尼方邀请函/担保函"],
+    leadTime: "建议提前2-3周申请商务签证"
   },
   "阿联酋迪拜": {
     status: "free", badge: "免签30天", badgeClass: "visa-badge-free",
@@ -919,18 +917,16 @@ function populateSelects() {
   document.getElementById('c-origin').addEventListener('change', () => updateDests('c'));
 
   // 绑定签证提示：目的地/天数/月数变化时自动更新
-  // 目的地变化
-  ['t','l','c','d'].forEach(p => {
+  // 目的地变化 — 仅差旅(t)和对比(c)显示签证提示（派驻/LTBS由公司统一办理签证）
+  ['t','c'].forEach(p => {
     document.getElementById(p + '-dest').addEventListener('change', () => updateVisaTip(p));
   });
   // 天数/月数变化也触发签证推荐更新
   ['t-months','t-days'].forEach(id => document.getElementById(id).addEventListener('input', () => updateVisaTip('t')));
-  ['l-months','l-days'].forEach(id => document.getElementById(id).addEventListener('input', () => updateVisaTip('l')));
   ['c-months','c-days'].forEach(id => document.getElementById(id).addEventListener('input', () => updateVisaTip('c')));
-  document.getElementById('d-months').addEventListener('input', () => updateVisaTip('d'));
 
   // 初始化默认目的地的签证提示（含天数）
-  ['t','l','c','d'].forEach(p => updateVisaTip(p));
+  ['t','c'].forEach(p => updateVisaTip(p));
 }
 
 function updateDests(prefix) {
@@ -941,7 +937,8 @@ function updateDests(prefix) {
   const available = Object.keys(FLIGHT_PRICES[origin] || {}).sort();
   available.forEach(d => s.add(new Option(d, d)));
   if ([...s.options].some(o => o.value === cur)) s.value = cur;
-  updateVisaTip(prefix);
+  // 仅差旅(t)和对比(c)面板显示签证提示
+  if (prefix === 't' || prefix === 'c') updateVisaTip(prefix);
 }
 
 function calcTravel() {
