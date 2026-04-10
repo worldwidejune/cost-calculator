@@ -95,39 +95,43 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
 .info-chip strong { color: var(--primary); }
 .special-notes { margin-top: 16px; font-size: 13px; color: var(--text-secondary); }
 .special-notes li { margin-bottom: 4px; }
-/* 签证信息卡片 */
-.visa-tip { margin-top: 12px; padding: 14px 16px; border-radius: var(--radius); border: 1px solid #d1d5db; background: linear-gradient(135deg, #fefce8 0%, #fff7ed 100%); font-size: 13px; line-height: 1.7; display: none; }
+/* 签证信息卡片 — 紧凑版 */
+.visa-tip { margin-top: 10px; border-radius: var(--radius); border: 1px solid #d1d5db; background: linear-gradient(135deg, #fefce8 0%, #fff7ed 100%); font-size: 13px; line-height: 1.6; display: none; overflow: hidden; }
 .visa-tip.show { display: block; }
-.visa-tip .visa-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; color: var(--text); }
-.visa-tip .visa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
-@media (max-width: 600px) { .visa-tip .visa-grid { grid-template-columns: 1fr; } }
-.visa-tip .visa-item { display: flex; gap: 6px; }
-.visa-tip .visa-label { color: var(--text-secondary); white-space: nowrap; min-width: 72px; }
-.visa-tip .visa-val { color: var(--text); font-weight: 500; }
-.visa-tip .visa-types { margin-top: 10px; border-top: 1px solid #e5e7eb; padding-top: 10px; }
-.visa-tip .visa-type-row { margin-bottom: 6px; padding: 6px 10px; border-radius: 8px; background: rgba(255,255,255,0.7); }
-.visa-tip .visa-type-name { font-weight: 600; color: var(--primary); }
-.visa-tip .visa-type-detail { color: var(--text-secondary); font-size: 12px; }
-.visa-tip .visa-note { margin-top: 8px; font-size: 12px; color: #92400e; }
-.visa-tip .visa-link { font-size: 12px; margin-top: 6px; }
-.visa-tip .visa-link a { color: var(--primary); text-decoration: underline; }
-.visa-badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 6px; vertical-align: middle; }
+/* 摘要行：始终显示 */
+.visa-summary { display: flex; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; flex-wrap: wrap; }
+.visa-summary:hover { background: rgba(0,0,0,0.03); }
+.visa-summary .visa-toggle { font-size: 11px; color: var(--primary); white-space: nowrap; margin-left: auto; flex-shrink: 0; }
+.visa-summary-text { flex: 1; min-width: 0; }
+.visa-summary-rec { font-weight: 600; font-size: 12px; }
+.visa-summary-rec.ok { color: #166534; }
+.visa-summary-rec.warn { color: #991b1b; }
+.visa-summary-extras { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.visa-summary-tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 8px; background: rgba(0,0,0,0.05); color: var(--text-secondary); }
+/* 详情区：默认隐藏 */
+.visa-detail { display: none; padding: 0 14px 12px; border-top: 1px solid #e5e7eb; }
+.visa-detail.open { display: block; }
+.visa-detail .visa-type-row { margin: 6px 0; padding: 5px 10px; border-radius: 8px; background: rgba(255,255,255,0.7); }
+.visa-detail .visa-type-name { font-weight: 600; color: var(--primary); font-size: 12px; }
+.visa-detail .visa-type-detail { color: var(--text-secondary); font-size: 11px; }
+.visa-detail .visa-note { margin-top: 6px; font-size: 11px; color: #92400e; }
+.visa-detail .visa-link { font-size: 11px; margin-top: 4px; }
+.visa-detail .visa-link a { color: var(--primary); text-decoration: underline; }
+.visa-detail .visa-entry-reqs { margin-top: 8px; padding: 8px 12px; border-radius: 8px; background: rgba(59,130,246,0.06); border: 1px solid #bfdbfe; }
+.visa-detail .visa-entry-title { font-weight: 600; font-size: 12px; color: #1e40af; margin-bottom: 4px; }
+.visa-detail .visa-entry-reqs ul { margin: 0; padding-left: 16px; font-size: 11px; }
+.visa-detail .visa-entry-reqs li { margin-bottom: 2px; }
+.visa-detail .visa-lead-time { margin-top: 6px; font-size: 11px; color: #9333ea; font-weight: 500; }
+/* 徽标 */
+.visa-badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; vertical-align: middle; }
 .visa-badge-free { background: #dcfce7; color: #166534; }
 .visa-badge-evisa { background: #dbeafe; color: #1e40af; }
 .visa-badge-visa { background: #fee2e2; color: #991b1b; }
 .visa-badge-landing { background: #fef3c7; color: #92400e; }
-/* 签证智能推荐样式 */
+.visa-stay-badge { display: inline-block; font-size: 10px; padding: 0 5px; border-radius: 6px; background: #f3f4f6; color: var(--text-secondary); margin-left: 3px; }
+/* 推荐/不足 */
 .visa-type-recommended { background: rgba(22,163,74,0.12) !important; border: 1.5px solid #16a34a; }
-.visa-type-insufficient { opacity: 0.5; text-decoration: line-through; background: rgba(239,68,68,0.06) !important; }
-.visa-stay-badge { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 8px; background: #f3f4f6; color: var(--text-secondary); margin-left: 4px; vertical-align: middle; }
-.visa-advice { padding: 10px 14px; border-radius: 10px; margin-bottom: 10px; font-size: 13px; line-height: 1.6; }
-.visa-advice-ok { background: #dcfce7; border: 1px solid #bbf7d0; color: #166534; }
-.visa-advice-warn { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
-.visa-entry-reqs { margin-top: 10px; padding: 10px 14px; border-radius: 10px; background: rgba(59,130,246,0.06); border: 1px solid #bfdbfe; }
-.visa-entry-title { font-weight: 600; font-size: 13px; color: #1e40af; margin-bottom: 6px; }
-.visa-entry-reqs ul { margin: 0; padding-left: 18px; font-size: 12px; color: var(--text); }
-.visa-entry-reqs li { margin-bottom: 3px; }
-.visa-lead-time { margin-top: 8px; font-size: 12px; color: #9333ea; font-weight: 500; }
+.visa-type-insufficient { opacity: 0.45; background: rgba(239,68,68,0.05) !important; }
 </style>
 </head>
 <body>
@@ -672,65 +676,72 @@ function getVisaRecommendation(dest, days) {
   return { recommended, exceedsAll, maxBizStay, allBiz: bizTypes };
 }
 
-// 渲染签证提示卡片（支持基于天数的智能推荐）
+// 渲染签证提示卡片（紧凑版：摘要 + 可展开详情）
 function renderVisaTip(dest, tipElId, days) {
   const el = document.getElementById(tipElId);
   if (!el) return;
   const info = VISA_INFO[dest];
   if (!info) { el.classList.remove('show'); el.innerHTML = ''; return; }
 
-  days = days || 0; // 如果没传天数，只显示基础信息
-
-  // 智能推荐
+  days = days || 0;
   const rec = days > 0 ? getVisaRecommendation(dest, days) : null;
+  const uid = tipElId + '-detail';
 
-  // 构建签证类型列表 HTML（高亮推荐的）
-  let typesHtml = info.types.filter(t => t.scenario !== "transit").map(t => {
-    const isRec = rec && rec.recommended && rec.recommended.name === t.name;
-    const isOver = days > 0 && t.maxStay < days && t.scenario === "biz";
-    let rowClass = '';
-    let prefix = '';
-    if (isRec) { rowClass = ' visa-type-recommended'; prefix = '✅ 推荐 '; }
-    else if (isOver) { rowClass = ' visa-type-insufficient'; prefix = '⛔ '; }
-    return `<div class="visa-type-row${rowClass}"><span class="visa-type-name">${prefix}${t.name}</span> <span class="visa-stay-badge">${t.maxStay}天</span><br><span class="visa-type-detail">${t.detail}</span></div>`;
-  }).join('');
-
-  // 构建智能建议 HTML
-  let adviceHtml = '';
+  // ── 摘要行 ──
+  let recText = '';
+  let recClass = '';
   if (days > 0 && rec) {
     if (rec.exceedsAll) {
-      adviceHtml = `<div class="visa-advice visa-advice-warn">
-        <strong>⚠️ 注意：出差${days}天超出所有商务签证的单次停留上限（最长${rec.maxBizStay}天）</strong><br>
-        建议方案：① 拆分为多次出差，每次≤${rec.maxBizStay}天；② 考虑申请工作签证/长期居留；③ 咨询HR了解派驻方案
-      </div>`;
+      recText = `⚠️ ${days}天超出停留上限（最长${rec.maxBizStay}天）→ 建议拆分出差或申请工作签证`;
+      recClass = 'warn';
     } else if (rec.recommended) {
-      adviceHtml = `<div class="visa-advice visa-advice-ok">
-        <strong>💡 出差${days}天建议：${rec.recommended.name}</strong>（单次可停留${rec.recommended.maxStay}天）
-      </div>`;
+      recText = `✅ ${days}天推荐：${rec.recommended.name}（可停${rec.recommended.maxStay}天）`;
+      recClass = 'ok';
     }
   }
 
-  // 入境要求清单
+  // 关键提醒标签（入境必备 + 提前时间，压缩为小标签）
+  let tags = [];
+  if (info.leadTime) tags.push(`⏰ ${info.leadTime}`);
+  if (info.entryReqs) {
+    // 只取最关键的2-3个
+    const key = info.entryReqs.slice(0, 3);
+    key.forEach(r => tags.push(r));
+  }
+  let tagsHtml = tags.length > 0 ? `<div class="visa-summary-extras">${tags.map(t => `<span class="visa-summary-tag">${t}</span>`).join('')}</div>` : '';
+
+  // ── 详情区 ──
+  let typesHtml = info.types.filter(t => t.scenario !== "transit").map(t => {
+    const isRec = rec && rec.recommended && rec.recommended.name === t.name;
+    const isOver = days > 0 && t.maxStay < days && t.scenario === "biz";
+    let cls = isRec ? ' visa-type-recommended' : isOver ? ' visa-type-insufficient' : '';
+    let pre = isRec ? '✅ ' : isOver ? '⛔ ' : '';
+    return `<div class="visa-type-row${cls}"><span class="visa-type-name">${pre}${t.name}</span> <span class="visa-stay-badge">${t.maxStay}天</span><br><span class="visa-type-detail">${t.detail}</span></div>`;
+  }).join('');
+
   let entryHtml = '';
   if (info.entryReqs && info.entryReqs.length > 0) {
-    entryHtml = `<div class="visa-entry-reqs">
-      <div class="visa-entry-title">📋 入境必备材料</div>
-      <ul>${info.entryReqs.map(r => `<li>${r}</li>`).join('')}</ul>
-    </div>`;
+    entryHtml = `<div class="visa-entry-reqs"><div class="visa-entry-title">📋 入境必备材料</div><ul>${info.entryReqs.map(r => `<li>${r}</li>`).join('')}</ul></div>`;
   }
-
-  // 提前申请时间
   let leadHtml = info.leadTime ? `<div class="visa-lead-time">⏰ ${info.leadTime}</div>` : '';
 
   el.innerHTML = `
-    <div class="visa-title">🛂 签证要求 <span class="visa-badge ${info.badgeClass}">${info.badge}</span></div>
-    <div style="margin-bottom:8px">${info.summary}</div>
-    ${adviceHtml}
-    <div class="visa-types">${typesHtml}</div>
-    ${entryHtml}
-    ${leadHtml}
-    ${info.note ? `<div class="visa-note">⚠️ ${info.note}</div>` : ''}
-    ${info.link ? `<div class="visa-link">🔗 <a href="${info.link}" target="_blank">官方签证信息</a></div>` : ''}
+    <div class="visa-summary" onclick="document.getElementById('${uid}').classList.toggle('open'); this.querySelector('.visa-toggle').textContent = document.getElementById('${uid}').classList.contains('open') ? '收起 ▲' : '详情 ▼'">
+      <span class="visa-badge ${info.badgeClass}">${info.badge}</span>
+      <div class="visa-summary-text">
+        ${recText ? `<div class="visa-summary-rec ${recClass}">${recText}</div>` : `<div style="font-size:12px">${info.summary}</div>`}
+        ${tagsHtml}
+      </div>
+      <span class="visa-toggle">详情 ▼</span>
+    </div>
+    <div class="visa-detail" id="${uid}">
+      <div style="font-size:12px;color:var(--text-secondary);margin:8px 0 6px">🛂 ${info.summary}</div>
+      ${typesHtml}
+      ${entryHtml}
+      ${leadHtml}
+      ${info.note ? `<div class="visa-note">⚠️ ${info.note}</div>` : ''}
+      ${info.link ? `<div class="visa-link">🔗 <a href="${info.link}" target="_blank">官方签证信息</a></div>` : ''}
+    </div>
   `;
   el.classList.add('show');
 }
