@@ -689,10 +689,10 @@ function renderVisaTip(dest, tipElId, days) {
   let recClass = '';
   if (days > 0 && rec) {
     if (rec.exceedsAll) {
-      recText = `⚠️ ${days}天超出停留上限（最长${rec.maxBizStay}天）→ 建议拆分出差或申请工作签证`;
+      recText = `⚠️ 单次停留${days}天超出停留上限（最长${rec.maxBizStay}天）→ 建议拆分出差或申请工作签证`;
       recClass = 'warn';
     } else if (rec.recommended) {
-      recText = `✅ ${days}天推荐：${rec.recommended.name}（可停${rec.recommended.maxStay}天）`;
+      recText = `✅ 单次停留${days}天推荐：${rec.recommended.name}（可停${rec.recommended.maxStay}天）`;
       recClass = 'ok';
     }
   }
@@ -745,16 +745,15 @@ function renderVisaTip(dest, tipElId, days) {
 
 // 获取各面板当前出差天数
 function getTravelDays(prefix) {
-  if (prefix === 'd') {
-    // 派驻面板：用派驻月数 × 30 估算
-    const months = parseInt(document.getElementById('d-months').value) || 12;
-    return months * 30;
-  }
+  // 返回单次停留天数 = 总出差天数 / 往返次数，用于签证类型判断
   const monthsEl = document.getElementById(prefix + '-months');
   const daysEl = document.getElementById(prefix + '-days');
+  const tripsEl = document.getElementById(prefix + '-trips');
   const months = monthsEl ? parseInt(monthsEl.value) || 6 : 6;
   const daysVal = daysEl ? daysEl.value : '';
-  return daysVal ? parseInt(daysVal) : months * 10;
+  const totalDays = daysVal ? parseInt(daysVal) : months * 10;
+  const trips = tripsEl && tripsEl.value ? parseInt(tripsEl.value) : months;
+  return Math.ceil(totalDays / Math.max(trips, 1));
 }
 
 // 更新指定面板的签证提示（结合天数）
@@ -915,9 +914,9 @@ function populateSelects() {
   document.getElementById('l-origin').addEventListener('change', () => updateDests('l'));
   document.getElementById('c-origin').addEventListener('change', () => updateDests('c'));
 
-  // 绑定签证提示：目的地/天数/月数变化时自动更新（仅差旅面板，派驻/LTBS/对比均不显示）
+  // 绑定签证提示：目的地/天数/月数/往返次数变化时自动更新（仅差旅面板）
   document.getElementById('t-dest').addEventListener('change', () => updateVisaTip('t'));
-  ['t-months','t-days'].forEach(id => document.getElementById(id).addEventListener('input', () => updateVisaTip('t')));
+  ['t-months','t-days','t-trips'].forEach(id => document.getElementById(id).addEventListener('input', () => updateVisaTip('t')));
 
   // 初始化默认目的地的签证提示（含天数）
   updateVisaTip('t');
