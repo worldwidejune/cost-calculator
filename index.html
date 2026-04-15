@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国际差旅 & 派驻 & LTBS 成本测算器</title>
+<title>国际异动成本测算器 International Mobility Cost Calculator</title>
 <style>
 :root {
   --primary: #1a73e8;
@@ -136,70 +136,70 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
 </head>
 <body>
 <div class="container">
-  <h1>🌏 国际差旅 & 派驻 & LTBS 成本测算器</h1>
-  <p class="subtitle">快速估算国际差旅、国际派驻和LTBS的增加成本</p>
+  <h1>🌏 国际异动成本测算器<br><span style="font-size:16px;font-weight:400;color:var(--text-secondary)">International Mobility Cost Calculator</span></h1>
+  <p class="subtitle">快速估算国际差旅、国际派驻和LTBS的增加成本 | Estimate incremental costs for Travel, Dispatch & LTBS</p>
   <div id="rate-panel" class="rate-panel">
     <div class="rate-header">
-      <span class="rate-title">💱 加载实时汇率中...</span>
+      <span class="rate-title">💱 加载实时汇率中... Loading exchange rates...</span>
       <span id="rate-badge" class="rate-badge" style="display:none"></span>
     </div>
     <div class="rate-grid" id="rate-grid"></div>
   </div>
 
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('travel')">✈️ 国际差旅</button>
-    <button class="tab" onclick="switchTab('dispatch')">🏠 国际派驻</button>
+    <button class="tab active" onclick="switchTab('travel')">✈️ 国际差旅 Travel</button>
+    <button class="tab" onclick="switchTab('dispatch')">🏠 国际派驻 Dispatch</button>
     <button class="tab" onclick="switchTab('ltbs')">🔄 LTBS</button>
-    <button class="tab" onclick="switchTab('compare')">📊 对比分析</button>
+    <button class="tab" onclick="switchTab('compare')">📊 对比分析 Compare</button>
   </div>
 
   <!-- ========== 差旅面板 ========== -->
   <div id="panel-travel">
     <div class="info-box">
-      <div class="title">📋 适用场景</div>
-      短期海外差旅需要，需前往不同海外国家。
+      <div class="title">📋 适用场景 Applicable Scenario</div>
+      短期海外差旅需要，需前往不同海外国家。<br><span style="font-size:12px;color:#5f6368">Short-term overseas business travel to various countries.</span>
     </div>
     <div class="card">
-      <div class="card-title"><span class="icon">✈️</span> 差旅信息</div>
+      <div class="card-title"><span class="icon">✈️</span> 差旅信息 Travel Info</div>
       <div class="form-grid">
         <div class="form-group">
-          <label>出发地</label>
+          <label>出发地 Origin</label>
           <select id="t-origin"></select>
         </div>
         <div class="form-group">
-          <label>目的地</label>
+          <label>目的地 Destination</label>
           <select id="t-dest"></select>
           <div id="t-visa-tip" class="visa-tip"></div>
         </div>
         <div class="form-group">
-          <label>时长 (月)</label>
+          <label>时长 Duration (月/months)</label>
           <input type="number" id="t-months" value="6" min="1" max="24">
         </div>
         <div class="form-group">
-          <label>出差天数</label>
+          <label>出差天数 Travel Days</label>
           <input type="number" id="t-days" value="" min="1" max="365" placeholder="默认=月数×10">
         </div>
         <div class="form-group">
-          <label>往返次数</label>
+          <label>往返次数 Round Trips</label>
           <input type="number" id="t-trips" value="" min="1" max="24" placeholder="默认=月数">
         </div>
         <div class="form-group">
-          <label>员工职级 <span class="level-hint">请输入专业职级或管理职级，如11、L2-1</span></label>
+          <label>员工职级 Level <span class="level-hint">请输入专业职级或管理职级，如11、L2-1</span></label>
           <input type="text" id="t-level" value="11" placeholder="如 11、L2-1">
         </div>
       </div>
-      <div class="btn-row"><button class="btn btn-primary" onclick="calcTravel()">计算差旅成本</button></div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="calcTravel()">计算差旅成本 Calculate</button></div>
     </div>
     <div id="travel-result" class="result-panel"></div>
     <div class="link-section">
-      <div class="link-title">📎 相关指引</div>
+      <div class="link-title">📎 相关指引 References</div>
       <div class="link-item">
         <span class="link-icon">📄</span>
         <a href="https://iwiki.woa.com/p/4015975441" target="_blank">各国差旅指引 Travel Guidelines</a>
       </div>
       <div class="link-item">
         <span class="link-icon">📋</span>
-        <a href="https://iwiki.woa.com/p/4016284203" target="_blank">海外差旅白名单</a>
+        <a href="https://iwiki.woa.com/p/4016284203" target="_blank">海外差旅白名单 Travel Whitelist</a>
       </div>
     </div>
   </div>
@@ -207,38 +207,38 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
   <!-- ========== 派驻面板 ========== -->
   <div id="panel-dispatch" class="hidden">
     <div class="info-box info-box-green">
-      <div class="title">📋 适用场景</div>
-      主要支持单一国家业务，且派驻时间至少6个月，最长为24个月，到期后最多可允许延期12个月。
+      <div class="title">📋 适用场景 Applicable Scenario</div>
+      主要支持单一国家业务，且派驻时间至少6个月，最长为24个月，到期后最多可允许延期12个月。<br><span style="font-size:12px;color:#5f6368">Supports single-country assignment, min 6 months, max 24 months (extendable up to 12 months).</span>
     </div>
     <div class="card">
-      <div class="card-title"><span class="icon">🏠</span> 派驻信息</div>
+      <div class="card-title"><span class="icon">🏠</span> 派驻信息 Dispatch Info</div>
       <div class="form-grid">
         <div class="form-group">
-          <label>派驻地</label>
+          <label>派驻地 Location</label>
           <select id="d-dest"></select>
         </div>
         <div class="form-group">
-          <label>派驻时长 (月)</label>
+          <label>派驻时长 Duration (月/months)</label>
           <input type="number" id="d-months" value="12" min="6" max="36">
         </div>
         <div class="form-group">
-          <label>携带家属</label>
+          <label>携带家属 Family</label>
           <select id="d-family">
-            <option value="仅本人">仅本人</option>
-            <option value="本人+配偶">本人+配偶</option>
-            <option value="本人+配偶+子女">本人+配偶+子女</option>
+            <option value="仅本人">仅本人 Self Only</option>
+            <option value="本人+配偶">本人+配偶 +Spouse</option>
+            <option value="本人+配偶+子女">本人+配偶+子女 +Spouse & Children</option>
           </select>
         </div>
         <div class="form-group">
-          <label>员工职级 <span class="level-hint">请输入专业职级或管理职级，如11、L2-1</span></label>
+          <label>员工职级 Level <span class="level-hint">请输入专业职级或管理职级，如11、L2-1</span></label>
           <input type="text" id="d-level" value="11" placeholder="如 11、L2-1">
         </div>
         <div class="form-group">
-          <label>员工税前年薪 (人民币)</label>
+          <label>员工税前年薪 Annual Salary (CNY)</label>
           <input type="number" id="d-salary" value="800000" min="100000" max="10000000" step="10000">
         </div>
       </div>
-      <div class="btn-row"><button class="btn btn-success" onclick="calcDispatch()">计算派驻成本</button></div>
+      <div class="btn-row"><button class="btn btn-success" onclick="calcDispatch()">计算派驻成本 Calculate</button></div>
     </div>
     <div id="dispatch-result" class="result-panel"></div>
   </div>
@@ -246,38 +246,38 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
   <!-- ========== LTBS面板 ========== -->
   <div id="panel-ltbs" class="hidden">
     <div class="info-box info-box-purple">
-      <div class="title">📋 适用场景</div>
+      <div class="title">📋 适用场景 Applicable Scenario</div>
       Long-Term Business Stay，介于国际差旅和国际派驻之间的异动场景。以商务签优先支持员工短期内异动到海外国家，天数通常为30天-182天。目前可支持美国、英国、新加坡、荷兰、日本、阿联酋、中国大陆、波兰、德国、法国等国家地区。提供每月生活津贴（对齐公司标准版国际派驻"员工档"）、住房支持（短租公寓，成本低于差旅酒店）、往返交通，同时公司需承担个税额外成本。总成本约为国际差旅的85%。
     </div>
     <div class="card">
-      <div class="card-title"><span class="icon">🔄</span> LTBS 信息</div>
+      <div class="card-title"><span class="icon">🔄</span> LTBS 信息 LTBS Info</div>
       <div class="form-grid">
         <div class="form-group">
-          <label>出发地</label>
+          <label>出发地 Origin</label>
           <select id="l-origin"></select>
         </div>
         <div class="form-group">
-          <label>目的地</label>
+          <label>目的地 Destination</label>
           <select id="l-dest"></select>
         </div>
         <div class="form-group">
-          <label>时长 (月)</label>
+          <label>时长 Duration (月/months)</label>
           <input type="number" id="l-months" value="6" min="1" max="6">
         </div>
         <div class="form-group">
-          <label>出差天数</label>
+          <label>出差天数 Travel Days</label>
           <input type="number" id="l-days" value="" min="30" max="182" placeholder="默认=月数×10">
         </div>
         <div class="form-group">
-          <label>往返次数</label>
+          <label>往返次数 Round Trips</label>
           <input type="number" id="l-trips" value="" min="1" max="12" placeholder="默认=月数">
         </div>
         <div class="form-group">
-          <label>员工职级 <span class="level-hint">请输入专业职级或管理职级，如11、L2-1</span></label>
+          <label>员工职级 Level <span class="level-hint">请输入专业职级或管理职级，如11、L2-1</span></label>
           <input type="text" id="l-level" value="11" placeholder="如 11、L2-1">
         </div>
       </div>
-      <div class="btn-row"><button class="btn btn-purple" onclick="calcLTBS()">计算 LTBS 成本</button></div>
+      <div class="btn-row"><button class="btn btn-purple" onclick="calcLTBS()">计算 LTBS 成本 Calculate</button></div>
     </div>
     <div id="ltbs-result" class="result-panel"></div>
   </div>
@@ -285,46 +285,46 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
   <!-- ========== 对比面板 ========== -->
   <div id="panel-compare" class="hidden">
     <div class="info-box">
-      <div class="title">📊 三种方案对比</div>
-      并列对比国际差旅、LTBS和国际派驻三种方案的成本，辅助业务决策。
+      <div class="title">📊 三种方案对比 Three-Way Comparison</div>
+      并列对比国际差旅、LTBS和国际派驻三种方案的成本，辅助业务决策。<br><span style="font-size:12px;color:#5f6368">Side-by-side cost comparison of Travel, LTBS and Dispatch to support decision-making.</span>
     </div>
     <div class="card">
-      <div class="card-title"><span class="icon">📊</span> 对比参数</div>
+      <div class="card-title"><span class="icon">📊</span> 对比参数 Parameters</div>
       <div class="form-grid">
         <div class="form-group">
-          <label>出发地</label>
+          <label>出发地 Origin</label>
           <select id="c-origin"></select>
         </div>
         <div class="form-group">
-          <label>目的地</label>
+          <label>目的地 Destination</label>
           <select id="c-dest"></select>
         </div>
         <div class="form-group">
-          <label>时长 (月)</label>
+          <label>时长 Duration (月/months)</label>
           <input type="number" id="c-months" value="6" min="1" max="24">
         </div>
         <div class="form-group">
-          <label>出差天数 (差旅/LTBS)</label>
+          <label>出差天数 Travel Days (差旅/LTBS)</label>
           <input type="number" id="c-days" value="" min="1" max="365" placeholder="默认=月数×10">
         </div>
         <div class="form-group">
-          <label>员工职级 <span class="level-hint">请输入专业职级或管理职级，如11、L2-1</span></label>
+          <label>员工职级 Level <span class="level-hint">请输入专业职级或管理职级，如11、L2-1</span></label>
           <input type="text" id="c-level" value="11" placeholder="如 11、L2-1">
         </div>
         <div class="form-group">
-          <label>携带家属 (派驻)</label>
+          <label>携带家属 Family (派驻/Dispatch)</label>
           <select id="c-family">
-            <option value="仅本人">仅本人</option>
-            <option value="本人+配偶">本人+配偶</option>
-            <option value="本人+配偶+子女">本人+配偶+子女</option>
+            <option value="仅本人">仅本人 Self Only</option>
+            <option value="本人+配偶">本人+配偶 +Spouse</option>
+            <option value="本人+配偶+子女">本人+配偶+子女 +Spouse & Children</option>
           </select>
         </div>
         <div class="form-group">
-          <label>员工税前年薪 (派驻)</label>
+          <label>员工税前年薪 Annual Salary (派驻/Dispatch)</label>
           <input type="number" id="c-salary" value="800000" min="100000" max="10000000" step="10000">
         </div>
       </div>
-      <div class="btn-row"><button class="btn btn-primary" onclick="calcCompare()">对比分析</button></div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="calcCompare()">对比分析 Compare</button></div>
     </div>
     <div id="compare-result" class="result-panel"></div>
   </div>
@@ -334,7 +334,7 @@ h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 8px; 
 // ===== EXCHANGE RATES (实时获取，离线回退默认值) =====
 const DEFAULT_RATES = { USD:6.8493, JPY:0.0430, GBP:9.1743, SGD:5.3763, THB:0.2132, HKD:0.8772, MXN:0.3922, CAD:4.9505, MYR:1.7212, EUR:8.0000, KRW:0.0046, AED:1.8650, BRL:1.3405, IDR:0.0004, CNY:1 };
 let RATES = {...DEFAULT_RATES};
-let rateSource = "默认汇率 (2026-04-10)";
+let rateSource = "默认汇率 Default Rates (2026-04-10)";
 let USD_CNY = RATES.USD;
 
 async function fetchLiveRates() {
@@ -352,7 +352,7 @@ async function fetchLiveRates() {
     USD_CNY = RATES.USD;
     updateHousingRates();
     const date = data.date || new Date().toISOString().slice(0,10);
-    rateSource = "实时汇率 (" + date + ")";
+    rateSource = "实时汇率 Live Rates (" + date + ")";
     updateRateStatus(true);
   } catch(e) {
     console.warn("汇率获取失败，使用默认值:", e);
@@ -385,8 +385,8 @@ function updateRateStatus(live) {
   if (title) title.textContent = "💱 " + rateSource;
   if (badge) {
     badge.style.display = "inline";
-    if (live) { badge.textContent = "● 已同步"; badge.className = "rate-badge live"; }
-    else { badge.textContent = "● 离线"; badge.className = "rate-badge offline"; }
+    if (live) { badge.textContent = "● 已同步 Synced"; badge.className = "rate-badge live"; }
+    else { badge.textContent = "● 离线 Offline"; badge.className = "rate-badge offline"; }
   }
   // Grid
   const grid = document.getElementById("rate-grid");
@@ -717,18 +717,18 @@ function renderVisaTip(dest, tipElId, days) {
 
   let entryHtml = '';
   if (info.entryReqs && info.entryReqs.length > 0) {
-    entryHtml = `<div class="visa-entry-reqs"><div class="visa-entry-title">📋 入境必备材料</div><ul>${info.entryReqs.map(r => `<li>${r}</li>`).join('')}</ul></div>`;
+    entryHtml = `<div class="visa-entry-reqs"><div class="visa-entry-title">📋 入境必备材料 Entry Requirements</div><ul>${info.entryReqs.map(r => `<li>${r}</li>`).join('')}</ul></div>`;
   }
   let leadHtml = info.leadTime ? `<div class="visa-lead-time">⏰ ${info.leadTime}</div>` : '';
 
   el.innerHTML = `
-    <div class="visa-summary" onclick="document.getElementById('${uid}').classList.toggle('open'); this.querySelector('.visa-toggle').textContent = document.getElementById('${uid}').classList.contains('open') ? '收起 ▲' : '详情 ▼'">
+    <div class="visa-summary" onclick="document.getElementById('${uid}').classList.toggle('open'); this.querySelector('.visa-toggle').textContent = document.getElementById('${uid}').classList.contains('open') ? '收起 Collapse ▲' : '详情 Details ▼'">
       <span class="visa-badge ${info.badgeClass}">${info.badge}</span>
       <div class="visa-summary-text">
         ${recText ? `<div class="visa-summary-rec ${recClass}">${recText}</div>` : `<div style="font-size:12px">${info.summary}</div>`}
         ${tagsHtml}
       </div>
-      <span class="visa-toggle">详情 ▼</span>
+      <span class="visa-toggle">详情 Details ▼</span>
     </div>
     <div class="visa-detail" id="${uid}">
       <div style="font-size:12px;color:var(--text-secondary);margin:8px 0 6px">🛂 ${info.summary}</div>
@@ -736,7 +736,7 @@ function renderVisaTip(dest, tipElId, days) {
       ${entryHtml}
       ${leadHtml}
       ${info.note ? `<div class="visa-note">⚠️ ${info.note}</div>` : ''}
-      ${info.link ? `<div class="visa-link">🔗 <a href="${info.link}" target="_blank">官方签证信息</a></div>` : ''}
+      ${info.link ? `<div class="visa-link">🔗 <a href="${info.link}" target="_blank">官方签证信息 Official Visa Info</a></div>` : ''}
     </div>
   `;
   el.classList.add('show');
@@ -944,30 +944,30 @@ function calcTravel() {
   const level = parseLevel(document.getElementById('t-level').value);
   const r = doCalcTravel(origin, dest, months, days, trips, level);
   const panel = document.getElementById('travel-result');
-  if (!r) { panel.innerHTML = '<div class="card" style="color:var(--danger)">未找到该路线的交通数据</div>'; panel.classList.add('show'); return; }
+  if (!r) { panel.innerHTML = '<div class="card" style="color:var(--danger)">未找到该路线的交通数据 Route data not found</div>'; panel.classList.add('show'); return; }
 
   panel.innerHTML = `
     <div class="result-total" style="background:linear-gradient(135deg, var(--primary), #4285f4)">
-      <div class="label">国际差旅 · 增加成本粗算</div>
+      <div class="label">国际差旅 · 增加成本粗算 Travel · Incremental Cost Estimate</div>
       <div class="amount">¥ ${fmt(r.total)}</div>
-      <div class="label">${origin} → ${dest} · ${months}个月 · ${r.hotelTier}</div>
+      <div class="label">${origin} → ${dest} · ${months}个月 months · ${r.hotelTier}</div>
     </div>
     <div class="card">
       <div class="info-row">
-        <span class="info-chip">📅 出差 <strong>${r.days}天</strong></span>
-        <span class="info-chip">🔄 往返 <strong>${trips}次</strong></span>
-        <span class="info-chip">🏷️ 住宿<strong>${r.hotelTier}</strong></span>
+        <span class="info-chip">📅 出差 Travel <strong>${r.days}天 days</strong></span>
+        <span class="info-chip">🔄 往返 Trips <strong>${trips}次</strong></span>
+        <span class="info-chip">🏷️ 住宿 Hotel <strong>${r.hotelTier}</strong></span>
       </div>
       <table class="result-table">
-        <thead><tr><th>费用项目</th><th>标准</th><th style="text-align:right">金额 (CNY)</th></tr></thead>
+        <thead><tr><th>费用项目 Item</th><th>标准 Basis</th><th style="text-align:right">金额 Amount (CNY)</th></tr></thead>
         <tbody>
-          <tr><td>🚄 往返交通</td><td class="sub">¥${fmtInt(r.fp)}/单程 x 2 x ${trips}次</td><td class="amount">¥ ${fmt(r.flightTotal)}</td></tr>
-          <tr><td>🏨 酒店住宿</td><td class="sub">$${r.hotelUSD}/晚 x ${USD_CNY} = ¥${fmt(r.hotelCNY)}/晚 x ${Math.max(r.days-trips,0)}晚</td><td class="amount">¥ ${fmt(r.hotelTotal)}</td></tr>
-          <tr><td>🍽️ 差旅补贴</td><td class="sub">¥${fmt(r.allowCNY)}/天 x ${r.days}天</td><td class="amount">¥ ${fmt(r.allowTotal)}</td></tr>
-          <tr style="background:var(--primary-light);font-weight:700"><td>💰 增加成本粗算</td><td></td><td class="amount" style="color:var(--primary);font-size:16px">¥ ${fmt(r.total)}</td></tr>
+          <tr><td>🚄 往返交通 Transport</td><td class="sub">¥${fmtInt(r.fp)}/单程one-way x 2 x ${trips}次trips</td><td class="amount">¥ ${fmt(r.flightTotal)}</td></tr>
+          <tr><td>🏨 酒店住宿 Hotel</td><td class="sub">$${r.hotelUSD}/晚night x ${USD_CNY} = ¥${fmt(r.hotelCNY)}/晚night x ${Math.max(r.days-trips,0)}晚nights</td><td class="amount">¥ ${fmt(r.hotelTotal)}</td></tr>
+          <tr><td>🍽️ 差旅补贴 Allowance</td><td class="sub">¥${fmt(r.allowCNY)}/天day x ${r.days}天days</td><td class="amount">¥ ${fmt(r.allowTotal)}</td></tr>
+          <tr style="background:var(--primary-light);font-weight:700"><td>💰 增加成本粗算 Total Estimate</td><td></td><td class="amount" style="color:var(--primary);font-size:16px">¥ ${fmt(r.total)}</td></tr>
         </tbody>
       </table>
-      <div class="note-box">⚠️ 以上为增加成本粗算，不含其他可能产生的费用。实际费用以审批为准。<br>📌 交通费用均为参考数据，实际费用请参考差旅预订平台的价格。</div>
+      <div class="note-box">⚠️ 以上为增加成本粗算，不含其他可能产生的费用。实际费用以审批为准。Estimated incremental cost only; actual costs subject to approval.<br>📌 交通费用均为参考数据，实际费用请参考差旅预订平台的价格。Transport costs are reference data; check your booking platform for actual prices.</div>
     </div>`;
   panel.classList.add('show');
 }
@@ -984,36 +984,36 @@ function calcDispatch() {
 
   panel.innerHTML = `
     <div class="result-total" style="background:linear-gradient(135deg,#0d904f,#34a853)">
-      <div class="label">国际派驻 · 增加成本粗算</div>
+      <div class="label">国际派驻 · 增加成本粗算 Dispatch · Incremental Cost Estimate</div>
       <div class="amount">¥ ${fmt(r.totalCost)}</div>
-      <div class="label">${dest} · ${months}个月 · ${family} · ${r.dispatchTier}</div>
+      <div class="label">${dest} · ${months}个月 months · ${family} · ${r.dispatchTier}</div>
     </div>
     <div class="card">
       <div class="info-row">
         <span class="info-chip">📍 <strong>${dest}</strong></span>
-        <span class="info-chip">📅 <strong>${months}个月</strong></span>
+        <span class="info-chip">📅 <strong>${months}个月 months</strong></span>
         <span class="info-chip">👨‍👩‍👧 <strong>${family}</strong></span>
         <span class="info-chip">🏷️ <strong>${r.dispatchTier}</strong></span>
       </div>
       <table class="result-table">
-        <thead><tr><th>补贴项目</th><th>明细</th><th style="text-align:right">月度金额 (CNY)</th></tr></thead>
+        <thead><tr><th>补贴项目 Subsidy Item</th><th>明细 Details</th><th style="text-align:right">月度金额 Monthly (CNY)</th></tr></thead>
         <tbody>
-          <tr><td>🏠 住房补贴</td><td class="sub">${r.housingDetail}</td><td class="amount">¥ ${fmt(r.housingCNY)}</td></tr>
-          <tr><td>🍽️ 生活津贴</td><td class="sub">员工 ¥${fmtInt(r.livingBase)}${r.livingSpouse > 0 ? ' + 家属 ¥' + fmtInt(r.livingSpouse) : ''}</td><td class="amount">¥ ${fmt(r.livingMonthly)}</td></tr>
-          <tr><td>🏔️ 艰苦补贴</td><td class="sub">${hasHardship ? '员工 ¥'+fmtInt(r.hardshipBase)+(r.hardshipExtra>0?' + 家属 ¥'+fmtInt(r.hardshipExtra):'') : '不适用（发达国家/地区）'}</td><td class="amount">${hasHardship ? '¥ '+fmt(r.hardshipMonthly) : '-'}</td></tr>
-          <tr style="background:var(--success-light);font-weight:700"><td>💰 月度补贴合计</td><td></td><td class="amount" style="color:var(--success);font-size:16px">¥ ${fmt(r.monthlySubsidy)}</td></tr>
+          <tr><td>🏠 住房补贴 Housing</td><td class="sub">${r.housingDetail}</td><td class="amount">¥ ${fmt(r.housingCNY)}</td></tr>
+          <tr><td>🍽️ 生活津贴 Living</td><td class="sub">员工 Employee ¥${fmtInt(r.livingBase)}${r.livingSpouse > 0 ? ' + 家属 Family ¥' + fmtInt(r.livingSpouse) : ''}</td><td class="amount">¥ ${fmt(r.livingMonthly)}</td></tr>
+          <tr><td>🏔️ 艰苦补贴 Hardship</td><td class="sub">${hasHardship ? '员工 Employee ¥'+fmtInt(r.hardshipBase)+(r.hardshipExtra>0?' + 家属 Family ¥'+fmtInt(r.hardshipExtra):'') : '不适用 N/A（发达国家/地区 Developed regions）'}</td><td class="amount">${hasHardship ? '¥ '+fmt(r.hardshipMonthly) : '-'}</td></tr>
+          <tr style="background:var(--success-light);font-weight:700"><td>💰 月度补贴合计 Monthly Subtotal</td><td></td><td class="amount" style="color:var(--success);font-size:16px">¥ ${fmt(r.monthlySubsidy)}</td></tr>
         </tbody>
       </table>
       <table class="result-table" style="margin-top:16px">
-        <thead><tr><th>成本汇总</th><th style="text-align:right">金额 (CNY)</th></tr></thead>
+        <thead><tr><th>成本汇总 Cost Summary</th><th style="text-align:right">金额 Amount (CNY)</th></tr></thead>
         <tbody>
-          <tr><td>📊 补贴小计（税后）（${months}个月）</td><td class="amount">¥ ${fmt(r.periodSubsidy)}</td></tr>
-          <tr><td>🧾 税负平衡成本（员工总收入的15%估算）</td><td class="amount">¥ ${fmt(r.taxEqualization)}</td></tr>
-          <tr><td>📋 个税申报费用</td><td class="amount">¥ ${fmtInt(r.taxFilingFee)}</td></tr>
-          <tr style="background:var(--success-light);font-weight:700"><td>💰 增加成本粗算</td><td class="amount" style="color:var(--success);font-size:16px">¥ ${fmt(r.totalCost)}</td></tr>
+          <tr><td>📊 补贴小计 Subsidy Subtotal（税后 after-tax）（${months}个月 months）</td><td class="amount">¥ ${fmt(r.periodSubsidy)}</td></tr>
+          <tr><td>🧾 税负平衡成本 Tax Equalization（员工总收入的15%估算 est. 15% of total income）</td><td class="amount">¥ ${fmt(r.taxEqualization)}</td></tr>
+          <tr><td>📋 个税申报费用 Tax Filing Fee</td><td class="amount">¥ ${fmtInt(r.taxFilingFee)}</td></tr>
+          <tr style="background:var(--success-light);font-weight:700"><td>💰 增加成本粗算 Total Estimate</td><td class="amount" style="color:var(--success);font-size:16px">¥ ${fmt(r.totalCost)}</td></tr>
         </tbody>
       </table>
-      <div class="note-box">⚠️ 以上为增加成本粗算。税负平衡按员工总收入的15%估算（实际12%-18%不等）。各国税负差异较大，具体以实际产生为准。</div>
+      <div class="note-box">⚠️ 以上为增加成本粗算。税负平衡按员工总收入的15%估算（实际12%-18%不等）。各国税负差异较大，具体以实际产生为准。Estimated cost only. Tax equalization est. at 15% (actual 12%-18%). Varies by country.</div>
     </div>`;
   panel.classList.add('show');
 }
@@ -1031,38 +1031,38 @@ function calcLTBS() {
   // LTBS基于差旅成本的85%
   const t = doCalcTravel(origin, dest, months, days, trips, level);
   const panel = document.getElementById('ltbs-result');
-  if (!t) { panel.innerHTML = '<div class="card" style="color:var(--danger)">未找到该路线的交通数据</div>'; panel.classList.add('show'); return; }
+  if (!t) { panel.innerHTML = '<div class="card" style="color:var(--danger)">未找到该路线的交通数据 Route data not found</div>'; panel.classList.add('show'); return; }
 
   const ltbsTotal = t.total * 0.85;
 
   panel.innerHTML = `
     <div class="result-total" style="background:linear-gradient(135deg, var(--purple), #a855f7)">
-      <div class="label">LTBS · 成本粗算</div>
+      <div class="label">LTBS · 成本粗算 Cost Estimate</div>
       <div class="amount">¥ ${fmt(ltbsTotal)}</div>
-      <div class="label">${origin} → ${dest} · ${months}个月 · 约为差旅成本的85%</div>
+      <div class="label">${origin} → ${dest} · ${months}个月 months · 约为差旅成本的85% ~85% of Travel cost</div>
     </div>
     <div class="card">
       <div class="info-row">
-        <span class="info-chip">📅 出差 <strong>${days}天</strong></span>
-        <span class="info-chip">🔄 往返 <strong>${trips}次</strong></span>
-        <span class="info-chip">🏷️ 住宿<strong>${t.hotelTier}</strong></span>
+        <span class="info-chip">📅 出差 Travel <strong>${days}天 days</strong></span>
+        <span class="info-chip">🔄 往返 Trips <strong>${trips}次</strong></span>
+        <span class="info-chip">🏷️ 住宿 Hotel <strong>${t.hotelTier}</strong></span>
       </div>
       <table class="result-table">
-        <thead><tr><th>计算过程</th><th>标准</th><th style="text-align:right">金额 (CNY)</th></tr></thead>
+        <thead><tr><th>计算过程 Calculation</th><th>标准 Basis</th><th style="text-align:right">金额 Amount (CNY)</th></tr></thead>
         <tbody>
-          <tr><td>🚄 往返交通（差旅）</td><td class="sub">¥${fmtInt(t.fp)}/单程 x 2 x ${trips}次</td><td class="amount">¥ ${fmt(t.flightTotal)}</td></tr>
-          <tr><td>🏨 酒店住宿（差旅）</td><td class="sub">$${t.hotelUSD}/晚 x ${USD_CNY} = ¥${fmt(t.hotelCNY)}/晚 x ${Math.max(days-trips,0)}晚</td><td class="amount">¥ ${fmt(t.hotelTotal)}</td></tr>
-          <tr><td>🍽️ 差旅补贴（差旅）</td><td class="sub">¥${fmt(t.allowCNY)}/天 x ${days}天</td><td class="amount">¥ ${fmt(t.allowTotal)}</td></tr>
-          <tr style="background:var(--bg)"><td>📊 国际差旅成本粗算</td><td></td><td class="amount">¥ ${fmt(t.total)}</td></tr>
-          <tr style="background:var(--purple-light);font-weight:700"><td>💰 LTBS成本粗算（× 85%）</td><td class="sub">¥${fmt(t.total)} x 85%</td><td class="amount" style="color:var(--purple);font-size:16px">¥ ${fmt(ltbsTotal)}</td></tr>
+          <tr><td>🚄 往返交通 Transport（差旅 Travel）</td><td class="sub">¥${fmtInt(t.fp)}/单程one-way x 2 x ${trips}次trips</td><td class="amount">¥ ${fmt(t.flightTotal)}</td></tr>
+          <tr><td>🏨 酒店住宿 Hotel（差旅 Travel）</td><td class="sub">$${t.hotelUSD}/晚night x ${USD_CNY} = ¥${fmt(t.hotelCNY)}/晚night x ${Math.max(days-trips,0)}晚nights</td><td class="amount">¥ ${fmt(t.hotelTotal)}</td></tr>
+          <tr><td>🍽️ 差旅补贴 Allowance（差旅 Travel）</td><td class="sub">¥${fmt(t.allowCNY)}/天day x ${days}天days</td><td class="amount">¥ ${fmt(t.allowTotal)}</td></tr>
+          <tr style="background:var(--bg)"><td>📊 国际差旅成本粗算 Travel Estimate</td><td></td><td class="amount">¥ ${fmt(t.total)}</td></tr>
+          <tr style="background:var(--purple-light);font-weight:700"><td>💰 LTBS成本粗算 LTBS Estimate（× 85%）</td><td class="sub">¥${fmt(t.total)} x 85%</td><td class="amount" style="color:var(--purple);font-size:16px">¥ ${fmt(ltbsTotal)}</td></tr>
         </tbody>
       </table>
       <table class="result-table" style="margin-top:16px">
         <tbody>
-          <tr><td>💡 相比国际差旅节省</td><td class="amount" style="color:var(--success)">¥ ${fmt(t.total - ltbsTotal)} (15%)</td></tr>
+          <tr><td>💡 相比国际差旅节省 Savings vs Travel</td><td class="amount" style="color:var(--success)">¥ ${fmt(t.total - ltbsTotal)} (15%)</td></tr>
         </tbody>
       </table>
-      <div class="note-box">⚠️ LTBS总成本约为国际差旅的85%。实际包含：每月生活津贴（对齐国际派驻"员工档"）、住房支持（短租公寓）、往返交通，以及公司承担的个税额外成本。<br>📌 交通费用均为参考数据，实际费用请参考差旅预订平台的价格。</div>
+      <div class="note-box">⚠️ LTBS总成本约为国际差旅的85%。实际包含：每月生活津贴（对齐国际派驻"员工档"）、住房支持（短租公寓）、往返交通，以及公司承担的个税额外成本。LTBS cost ≈ 85% of Travel, incl. living allowance, housing (serviced apt.), transport, and company-borne tax.<br>📌 交通费用均为参考数据，实际费用请参考差旅预订平台的价格。Transport costs are reference data; check your booking platform for actual prices.</div>
     </div>`;
   panel.classList.add('show');
 }
@@ -1082,13 +1082,13 @@ function calcCompare() {
   const d = doCalcDispatch(dest, months, family, level, salary);
   const panel = document.getElementById('compare-result');
 
-  if (!t) { panel.innerHTML = '<div class="card" style="color:var(--danger)">未找到该路线的交通数据，无法对比</div>'; panel.classList.add('show'); return; }
+  if (!t) { panel.innerHTML = '<div class="card" style="color:var(--danger)">未找到该路线的交通数据，无法对比 Route data not found</div>'; panel.classList.add('show'); return; }
 
   const ltbsTotal = t.total * 0.85;
   const costs = [
-    { name: "国际差旅", total: t.total },
+    { name: "国际差旅 Travel", total: t.total },
     { name: "LTBS", total: ltbsTotal },
-    { name: "国际派驻", total: d.totalCost }
+    { name: "国际派驻 Dispatch", total: d.totalCost }
   ];
   costs.sort((a, b) => a.total - b.total);
   const cheapest = costs[0].name;
@@ -1097,38 +1097,38 @@ function calcCompare() {
 
   panel.innerHTML = `
     <div class="result-total" style="background:linear-gradient(135deg,#e37400,#fbbc04)">
-      <div class="label">三方案对比：${origin} → ${dest} · ${months}个月</div>
-      <div class="amount" style="font-size:26px">${cheapest} 最经济，比${mostExpensive}节省 ¥${fmt(savings)}</div>
+      <div class="label">三方案对比 Comparison：${origin} → ${dest} · ${months}个月 months</div>
+      <div class="amount" style="font-size:26px">${cheapest} 最经济 Most Economical，节省 Save ¥${fmt(savings)}</div>
     </div>
     <div class="compare-grid">
       <div class="card">
-        <div class="card-title"><span class="icon">✈️</span> 国际差旅 ${cheapest === '国际差旅' ? '<span class="badge badge-success" style="margin-left:auto">最经济</span>' : ''}</div>
+        <div class="card-title"><span class="icon">✈️</span> 国际差旅 Travel ${cheapest.includes('Travel') ? '<span class="badge badge-success" style="margin-left:auto">最经济 Best</span>' : ''}</div>
         <table class="result-table">
-          <tr><td>往返交通</td><td class="amount">¥ ${fmt(t.flightTotal)}</td></tr>
-          <tr><td>酒店住宿</td><td class="amount">¥ ${fmt(t.hotelTotal)}</td></tr>
-          <tr><td>差旅补贴</td><td class="amount">¥ ${fmt(t.allowTotal)}</td></tr>
-          <tr style="background:var(--primary-light);font-weight:700"><td>合计</td><td class="amount" style="color:var(--primary)">¥ ${fmt(t.total)}</td></tr>
+          <tr><td>往返交通 Transport</td><td class="amount">¥ ${fmt(t.flightTotal)}</td></tr>
+          <tr><td>酒店住宿 Hotel</td><td class="amount">¥ ${fmt(t.hotelTotal)}</td></tr>
+          <tr><td>差旅补贴 Allowance</td><td class="amount">¥ ${fmt(t.allowTotal)}</td></tr>
+          <tr style="background:var(--primary-light);font-weight:700"><td>合计 Total</td><td class="amount" style="color:var(--primary)">¥ ${fmt(t.total)}</td></tr>
         </table>
       </div>
       <div class="card">
-        <div class="card-title"><span class="icon">🔄</span> LTBS ${cheapest === 'LTBS' ? '<span class="badge badge-success" style="margin-left:auto">最经济</span>' : ''}</div>
+        <div class="card-title"><span class="icon">🔄</span> LTBS ${cheapest === 'LTBS' ? '<span class="badge badge-success" style="margin-left:auto">最经济 Best</span>' : ''}</div>
         <table class="result-table">
-          <tr><td>差旅成本基数</td><td class="amount">¥ ${fmt(t.total)}</td></tr>
-          <tr><td>LTBS折算 (x85%)</td><td class="amount" style="color:var(--purple)">x 0.85</td></tr>
-          <tr style="background:var(--purple-light);font-weight:700"><td>合计</td><td class="amount" style="color:var(--purple)">¥ ${fmt(ltbsTotal)}</td></tr>
+          <tr><td>差旅成本基数 Travel Base</td><td class="amount">¥ ${fmt(t.total)}</td></tr>
+          <tr><td>LTBS折算 Factor (x85%)</td><td class="amount" style="color:var(--purple)">x 0.85</td></tr>
+          <tr style="background:var(--purple-light);font-weight:700"><td>合计 Total</td><td class="amount" style="color:var(--purple)">¥ ${fmt(ltbsTotal)}</td></tr>
         </table>
       </div>
       <div class="card">
-        <div class="card-title"><span class="icon">🏠</span> 国际派驻 (${family}) ${cheapest === '国际派驻' ? '<span class="badge badge-success" style="margin-left:auto">最经济</span>' : ''}</div>
+        <div class="card-title"><span class="icon">🏠</span> 国际派驻 Dispatch (${family}) ${cheapest.includes('Dispatch') ? '<span class="badge badge-success" style="margin-left:auto">最经济 Best</span>' : ''}</div>
         <table class="result-table">
-          <tr><td>补贴小计</td><td class="amount">¥ ${fmt(d.periodSubsidy)}</td></tr>
-          <tr><td>税负平衡</td><td class="amount">¥ ${fmt(d.taxEqualization)}</td></tr>
-          <tr><td>个税申报</td><td class="amount">¥ ${fmtInt(d.taxFilingFee)}</td></tr>
-          <tr style="background:var(--success-light);font-weight:700"><td>合计</td><td class="amount" style="color:var(--success)">¥ ${fmt(d.totalCost)}</td></tr>
+          <tr><td>补贴小计 Subsidy</td><td class="amount">¥ ${fmt(d.periodSubsidy)}</td></tr>
+          <tr><td>税负平衡 Tax Eq.</td><td class="amount">¥ ${fmt(d.taxEqualization)}</td></tr>
+          <tr><td>个税申报 Tax Filing</td><td class="amount">¥ ${fmtInt(d.taxFilingFee)}</td></tr>
+          <tr style="background:var(--success-light);font-weight:700"><td>合计 Total</td><td class="amount" style="color:var(--success)">¥ ${fmt(d.totalCost)}</td></tr>
         </table>
       </div>
     </div>
-    <div class="note-box">⚠️ 差旅和LTBS按出差${days}天计算；派驻仅含补贴+税负成本(税后)。实际决策需综合考虑业务需求、签证可行性、员工意愿等因素。<br>📌 交通费用均为参考数据，实际费用请参考差旅预订平台的价格。</div>`;
+    <div class="note-box">⚠️ 差旅和LTBS按出差${days}天计算；派驻仅含补贴+税负成本(税后)。实际决策需综合考虑业务需求、签证可行性、员工意愿等因素。Travel & LTBS based on ${days} travel days; Dispatch incl. subsidy + tax only. Actual decisions should consider business needs, visa feasibility, etc.<br>📌 交通费用均为参考数据，实际费用请参考差旅预订平台的价格。Transport costs are reference data; check your booking platform for actual prices.</div>`;
   panel.classList.add('show');
 }
 
