@@ -1107,17 +1107,17 @@ function calcCompare() {
   const ltbsTaxRisk = ltbsDays >= 183;           // LTBS有税务风险
   const travelTaxRisk = days >= 183;             // 差旅≥183天也有税务风险
 
-  // 校验提示
+  // 校验提示（简洁版）
   if (travelTaxRisk)
-    warnings.push({level:'error', text:'⛔ 国际差旅全年出差天数累计' + days + '天（≥183天），存在税务风险，建议走国际派驻。<br>Travel total ' + days + ' days (≥183) poses tax risk — Dispatch recommended.'});
+    warnings.push({level:'error', text:'⛔ 差旅 Travel ' + days + '天 days（≥183），有税务风险 Tax risk → 建议派驻 Dispatch'});
   if (ltbsTaxRisk)
-    warnings.push({level:'error', text:'⛔ LTBS全年出差天数累计' + ltbsDays + '天（≥183天），存在税务风险，建议走国际派驻。<br>LTBS total ' + ltbsDays + ' days (≥183) poses tax risk — Dispatch recommended.'});
+    warnings.push({level:'error', text:'⛔ LTBS ' + ltbsDays + '天 days（≥183），有税务风险 Tax risk → 建议派驻 Dispatch'});
   if (dispatchDisabled)
-    warnings.push({level:'error', text:'⛔ 国际派驻要求至少6个月，当前仅' + months + '个月，不建议国际派驻。<br>Dispatch requires min. 6 months; current ' + months + ' month(s) — not recommended.'});
+    warnings.push({level:'error', text:'⛔ 派驻 Dispatch 需≥6个月 months，当前 ' + months + '个月 → 不适用 N/A'});
   if (dispatchOvertime)
-    warnings.push({level:'warn', text:'⚠️ 国际派驻一般不超过3年（36个月），当前' + months + '个月，超期需额外审批。<br>Dispatch normally ≤ 3 years; current ' + months + ' months — extended approval required.'});
+    warnings.push({level:'warn', text:'⚠️ 派驻 Dispatch ' + months + '个月 months（>36），需额外审批 Extra approval needed'});
   if (ltbsTooShort)
-    warnings.push({level:'info', text:'💡 LTBS建议30天以上使用，当前仅' + ltbsDays + '天，短期更适合走国际差旅。<br>LTBS recommended for 30+ days; current ' + ltbsDays + ' days — standard Travel is more suitable.'});
+    warnings.push({level:'info', text:'💡 LTBS ' + ltbsDays + '天 days（<30），建议走差旅 Travel recommended'});
 
   const ltbsTotal = t.total * 0.85;
 
@@ -1137,62 +1137,29 @@ function calcCompare() {
     return a.risk - b.risk || a.total - b.total;
   });
 
-  // 推荐理由
+  // 推荐理由（精简）
   function getRecommendReason(s) {
     if (!s.eligible) return '';
-    const reasons = [];
     if (s.key === recommended.key) {
-      if (s.risk === 0 && s === eligible[0]) reasons.push('合规且成本最优 Compliant & lowest cost');
-      else if (s.risk === 0) reasons.push('合规 Compliant');
-      else reasons.push('可行但需注意风险 Feasible with caveats');
+      if (s.risk === 0) return '合规+最优 Best';
+      return '可行 Feasible';
     }
-    return reasons.join('；');
-  }
-
-  // 推荐标签
-  function getBadge(s) {
-    if (!s.eligible) return '<span class="badge" style="background:var(--danger);color:#fff;margin-left:auto">不适用 N/A</span>';
-    if (s.key === recommended.key) return '<span class="badge badge-success" style="margin-left:auto">✅ 推荐 Recommended</span>';
-    if (s.risk > 0) return '<span class="badge" style="background:#e37400;color:#fff;margin-left:auto">⚠️ 有风险 Risk</span>';
     return '';
   }
 
-  // 推荐汇总文案
-  let summaryText = '';
-  const rKey = recommended.key;
-  if (rKey === 'travel') {
-    summaryText = '推荐 <b>国际差旅</b>：合规可行'
-      + (travelTaxRisk ? '（注意：≥183天有税务风险）' : '')
-      + (ltbsTooShort ? '，LTBS天数不足不推荐' : '')
-      + (dispatchDisabled ? '，派驻时间不满6个月' : '')
-      + '，成本 ¥' + fmt(recommended.total);
-  } else if (rKey === 'ltbs') {
-    summaryText = '推荐 <b>LTBS</b>：合规可行且成本更优（¥' + fmt(recommended.total) + '），较差旅节省 ¥' + fmt(t.total - ltbsTotal);
-  } else if (rKey === 'dispatch') {
-    summaryText = '推荐 <b>国际派驻</b>：时间满足要求'
-      + (travelTaxRisk ? '，差旅≥183天有税务风险' : '')
-      + (ltbsTaxRisk ? '，LTBS有税务风险' : '')
-      + (dispatchOvertime ? '（超3年需额外审批）' : '')
-      + '，成本 ¥' + fmt(recommended.total);
+  // 推荐标签（精简）
+  function getBadge(s) {
+    if (!s.eligible) return '<span class="badge" style="background:var(--danger);color:#fff;margin-left:auto">N/A</span>';
+    if (s.key === recommended.key) return '<span class="badge badge-success" style="margin-left:auto">✅ 推荐 Best</span>';
+    if (s.risk > 0) return '<span class="badge" style="background:#e37400;color:#fff;margin-left:auto">⚠️ 风险 Risk</span>';
+    return '';
   }
 
-  // 英文推荐
-  let summaryTextEn = '';
-  if (rKey === 'travel') {
-    summaryTextEn = 'Recommended <b>Travel</b>: compliant'
-      + (travelTaxRisk ? ' (note: ≥183 days tax risk)' : '')
-      + (ltbsTooShort ? ', LTBS too short' : '')
-      + (dispatchDisabled ? ', Dispatch ineligible (<6 months)' : '')
-      + ', cost ¥' + fmt(recommended.total);
-  } else if (rKey === 'ltbs') {
-    summaryTextEn = 'Recommended <b>LTBS</b>: compliant & cost-effective (¥' + fmt(recommended.total) + '), saves ¥' + fmt(t.total - ltbsTotal) + ' vs Travel';
-  } else if (rKey === 'dispatch') {
-    summaryTextEn = 'Recommended <b>Dispatch</b>: duration qualifies'
-      + (travelTaxRisk ? ', Travel ≥183 days tax risk' : '')
-      + (ltbsTaxRisk ? ', LTBS has tax risk' : '')
-      + (dispatchOvertime ? ' (>3yr needs approval)' : '')
-      + ', cost ¥' + fmt(recommended.total);
-  }
+  // 推荐汇总（一行精简）
+  let summaryText = '✅ 推荐 Recommended: <b>' + recommended.name + '</b>　¥' + fmt(recommended.total);
+  if (recommended.risk > 0) summaryText += '　⚠️';
+
+  // 英文不再单独一行，已融合到上面
 
   // 警告 HTML
   const warningHtml = warnings.length > 0
@@ -1200,7 +1167,7 @@ function calcCompare() {
     : '';
 
   // 税务风险标签（差旅和LTBS统一）
-  const taxRiskTag183 = '<div style="color:var(--danger);font-size:13px;margin-top:6px">⚠️ ≥183天有税务风险，建议走国际派驻 ≥183 days tax risk, Dispatch recommended</div>';
+  const taxRiskTag183 = '<div style="color:var(--danger);font-size:13px;margin-top:6px">⚠️ ≥183天税务风险 Tax risk</div>';
   const travelRiskTag = travelTaxRisk ? taxRiskTag183 : '';
   const ltbsRiskTag = ltbsTaxRisk ? taxRiskTag183 : '';
 
@@ -1209,15 +1176,15 @@ function calcCompare() {
     return !s.eligible ? 'opacity:0.45;pointer-events:none;position:relative' : (s.risk > 0 ? 'border-left:3px solid #e37400' : '');
   }
   function disabledOverlay(s) {
-    if (s.key === 'dispatch' && !s.eligible) return '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;font-weight:700;color:var(--danger);background:rgba(255,255,255,0.85);padding:6px 16px;border-radius:8px">不满6个月 < 6 months</div>';
+    if (s.key === 'dispatch' && !s.eligible) return '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;font-weight:700;color:var(--danger);background:rgba(255,255,255,0.85);padding:6px 16px;border-radius:8px">需≥6个月 Min 6 mo</div>';
     return '';
   }
 
   panel.innerHTML = `
     ${warningHtml}
     <div class="result-total" style="background:linear-gradient(135deg,#e37400,#fbbc04)">
-      <div class="label">三方案对比 Comparison：${origin} → ${dest} · ${months}个月 months · ${days}天 days</div>
-      <div class="amount" style="font-size:22px;line-height:1.6">${summaryText}<br><span style="font-size:16px;opacity:0.9">${summaryTextEn}</span></div>
+      <div class="label">${origin} → ${dest} · ${months}个月 mo · ${days}天 days</div>
+      <div class="amount" style="font-size:22px">${summaryText}</div>
     </div>
     <div class="compare-grid">
       <div class="card" style="${cardStyle(schemes[0])}">
@@ -1253,9 +1220,8 @@ function calcCompare() {
       </div>
     </div>
     <div class="note-box">
-      📋 <b>推荐逻辑 Recommendation logic</b>：合规性 Compliance → 风险等级 Risk level → 成本 Cost<br>
-      ① 差旅/LTBS出差天数≥183天有税务风险，建议派驻 Travel/LTBS ≥183 days: tax risk, Dispatch recommended ② 派驻需≥6个月，超3年需审批 Dispatch: 6-36 months ③ LTBS需<183天 LTBS: <183 days ④ 在合规低风险方案中选成本最优 Choose lowest cost among compliant & low-risk options<br>
-      📌 交通费用均为参考数据，实际费用请参考差旅预订平台。Transport costs are reference data; check your booking platform for actual prices.
+      📋 推荐逻辑 Logic：合规 Compliance → 风险 Risk → 成本 Cost　|　≥183天出差有税务风险 ≥183 days = tax risk　|　派驻 Dispatch 6-36个月 mo<br>
+      📌 交通费用为参考数据 Transport costs are estimates
     </div>`;
   panel.classList.add('show');
 }
