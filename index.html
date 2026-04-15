@@ -884,6 +884,18 @@ function switchTab(tab) {
   });
 }
 
+// 城市中英文映射
+const CITY_EN = {
+  "深圳": "Shenzhen", "北京": "Beijing", "广州": "Guangzhou",
+  "中国香港": "Hong Kong", "日本东京": "Tokyo", "韩国首尔": "Seoul",
+  "新加坡": "Singapore", "泰国曼谷": "Bangkok", "马来西亚吉隆坡": "Kuala Lumpur",
+  "印尼雅加达": "Jakarta", "阿联酋迪拜": "Dubai", "沙特利雅得": "Riyadh",
+  "美国洛杉矶": "Los Angeles", "美国旧金山": "San Francisco", "美国纽约": "New York",
+  "英国伦敦": "London", "法国巴黎": "Paris", "德国法兰克福": "Frankfurt",
+  "荷兰阿姆斯特丹": "Amsterdam", "波兰华沙": "Warsaw"
+};
+function cityLabel(cn) { return CITY_EN[cn] ? cn + ' ' + CITY_EN[cn] : cn; }
+
 function populateSelects() {
   const origins = Object.keys(FLIGHT_PRICES);
   const allDests = new Set();
@@ -893,20 +905,20 @@ function populateSelects() {
 
   ['t-origin', 'l-origin', 'c-origin'].forEach(id => {
     const s = document.getElementById(id);
-    origins.forEach(o => { s.add(new Option(o, o)); });
+    origins.forEach(o => { s.add(new Option(cityLabel(o), o)); });
   });
   ['t-dest', 'l-dest'].forEach(id => {
     const s = document.getElementById(id);
-    dests.forEach(d => { s.add(new Option(d, d)); });
+    dests.forEach(d => { s.add(new Option(cityLabel(d), d)); });
     s.value = "泰国曼谷";
   });
   // compare dest: only those with both flight and dispatch data
   const cDestSel = document.getElementById('c-dest');
-  dests.forEach(d => { cDestSel.add(new Option(d, d)); });
+  dests.forEach(d => { cDestSel.add(new Option(cityLabel(d), d)); });
   cDestSel.value = "泰国曼谷";
 
   const ds = document.getElementById('d-dest');
-  dispatchDests.forEach(d => { ds.add(new Option(d, d)); });
+  dispatchDests.forEach(d => { ds.add(new Option(cityLabel(d), d)); });
   ds.value = "泰国曼谷";
 
   document.getElementById('t-origin').addEventListener('change', () => updateDests('t'));
@@ -927,7 +939,7 @@ function updateDests(prefix) {
   const cur = s.value;
   s.innerHTML = '';
   const available = Object.keys(FLIGHT_PRICES[origin] || {}).sort();
-  available.forEach(d => s.add(new Option(d, d)));
+  available.forEach(d => s.add(new Option(cityLabel(d), d)));
   if ([...s.options].some(o => o.value === cur)) s.value = cur;
   // 仅差旅(t)面板显示签证提示
   if (prefix === 't') updateVisaTip(prefix);
