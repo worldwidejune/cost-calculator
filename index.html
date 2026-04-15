@@ -862,8 +862,8 @@ function doCalcDispatch(dest, months, family, level, salary) {
   const totalIncome = salary + periodSubsidy;
   const taxEqualization = totalIncome * 0.15;
 
-  // 增加成本粗算
-  const totalCost = (periodSubsidy + taxEqualization + taxFilingFee) * (months / 12);
+  // 增加成本 = 补贴 + 税负平衡 + 个税申报
+  const totalCost = periodSubsidy + taxEqualization + taxFilingFee;
 
   return {
     tier, dispatchTier, livingBase, livingSpouse, livingMonthly,
@@ -1096,18 +1096,54 @@ function calcCompare() {
 
   if (!t) { panel.innerHTML = '<div class="card" style="color:var(--danger)">未找到该路线的交通数据，无法对比 Route data not found</div>'; panel.classList.add('show'); return; }
 
+  // === 校验逻辑 ===
+  const warnings = [];
+  // 派驻校验：至少6个月，最长3年
+  const dispatchDisabled = months < 6;
+  if (dispatchDisabled) {
+    warnings.push('⛔ 国际派驻要求至少6个月，当前仅' + months + '个月，不建议走国际派驻方案。<br>Dispatch requires min. 6 months; current ' + months + ' month(s) — not recommended.');
+  }
+  if (months > 36) {
+    warnings.push('⚠️ 国际派驻一般不超过3年（36个月），当前' + months + '个月，超期需额外审批。<br>Dispatch normally ≤ 3 years (36 months); current ' + months + ' — extended approval required.');
+  }
+  // LTBS校验：建议30-182天，≥183天有税务风险
+  const ltbsDays = days;
+  let ltbsWarning = '';
+  if (ltbsDays < 30) {
+    warnings.push('💡 LTBS建议在30天以上使用，当前仅' + ltbsDays + '天，短期差旅直接走国际差旅更合适。<br>LTBS recommended for 30+ days; current ' + ltbsDays + ' days — standard travel may be better.');
+  }
+  if (ltbsDays >= 183) {
+    warnings.push('⛔ LTBS出差天数达' + ltbsDays + '天（≥183天），存在税务风险，建议走国际派驻方案。<br>LTBS ' + ltbsDays + ' days (≥183) poses tax risk — consider Dispatch instead.');
+    ltbsWarning = '<div style="color:var(--danger);font-size:13px;margin-top:6px">⚠️ ≥183天有税务风险 Tax risk</div>';
+  } else if (ltbsDays > 182) {
+    ltbsWarning = '';
+  }
+
   const ltbsTotal = t.total * 0.85;
+
+  // 构建可参与排序的方案列表（派驻不满6月则排除）
   const costs = [
-    { name: "国际差旅 Travel", total: t.total },
-    { name: "LTBS", total: ltbsTotal },
-    { name: "国际派驻 Dispatch", total: d.totalCost }
+    { key: "travel", name: "国际差旅 Travel", total: t.total },
+    { key: "ltbs", name: "LTBS", total: ltbsTotal }
   ];
+  if (!dispatchDisabled) {
+    costs.push({ key: "dispatch", name: "国际派驻 Dispatch", total: d.totalCost });
+  }
   costs.sort((a, b) => a.total - b.total);
   const cheapest = costs[0].name;
-  const mostExpensive = costs[2].name;
-  const savings = costs[2].total - costs[0].total;
+  const savings = costs[costs.length - 1].total - costs[0].total;
+
+  const warningHtml = warnings.length > 0
+    ? '<div class="card" style="background:#fff3cd;border-left:4px solid #e37400;margin-bottom:16px;padding:14px 18px;font-size:14px;line-height:1.8">' + warnings.join('<br><br>') + '</div>'
+    : '';
+
+  const dispatchCardStyle = dispatchDisabled ? 'opacity:0.45;pointer-events:none;position:relative' : '';
+  const dispatchDisabledBadge = dispatchDisabled
+    ? '<span class="badge" style="background:var(--danger);color:#fff;margin-left:auto">不适用 N/A</span>'
+    : (cheapest.includes('Dispatch') ? '<span class="badge badge-success" style="margin-left:auto">最经济 Best</span>' : '');
 
   panel.innerHTML = `
+    ${warningHtml}
     <div class="result-total" style="background:linear-gradient(135deg,#e37400,#fbbc04)">
       <div class="label">三方案对比 Comparison：${origin} → ${dest} · ${months}个月 months</div>
       <div class="amount" style="font-size:26px">${cheapest} 最经济 Most Economical，节省 Save ¥${fmt(savings)}</div>
@@ -1129,18 +1165,20 @@ function calcCompare() {
           <tr><td>LTBS折算 Factor (x85%)</td><td class="amount" style="color:var(--purple)">x 0.85</td></tr>
           <tr style="background:var(--purple-light);font-weight:700"><td>合计 Total</td><td class="amount" style="color:var(--purple)">¥ ${fmt(ltbsTotal)}</td></tr>
         </table>
+        ${ltbsWarning}
       </div>
-      <div class="card">
-        <div class="card-title"><span class="icon">🏠</span> 国际派驻 Dispatch (${family}) ${cheapest.includes('Dispatch') ? '<span class="badge badge-success" style="margin-left:auto">最经济 Best</span>' : ''}</div>
+      <div class="card" style="${dispatchCardStyle}">
+        <div class="card-title"><span class="icon">🏠</span> 国际派驻 Dispatch (${family}) ${dispatchDisabledBadge}</div>
         <table class="result-table">
           <tr><td>补贴小计 Subsidy</td><td class="amount">¥ ${fmt(d.periodSubsidy)}</td></tr>
           <tr><td>税负平衡 Tax Eq.</td><td class="amount">¥ ${fmt(d.taxEqualization)}</td></tr>
           <tr><td>个税申报 Tax Filing</td><td class="amount">¥ ${fmtInt(d.taxFilingFee)}</td></tr>
           <tr style="background:var(--success-light);font-weight:700"><td>合计 Total</td><td class="amount" style="color:var(--success)">¥ ${fmt(d.totalCost)}</td></tr>
         </table>
+        ${dispatchDisabled ? '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;font-weight:700;color:var(--danger);background:rgba(255,255,255,0.85);padding:6px 16px;border-radius:8px">不满6个月 < 6 months</div>' : ''}
       </div>
     </div>
-    <div class="note-box">⚠️ 差旅和LTBS按出差${days}天计算；派驻仅含补贴+税负成本(税后)。实际决策需综合考虑业务需求、签证可行性、员工意愿等因素。Travel & LTBS based on ${days} travel days; Dispatch incl. subsidy + tax only. Actual decisions should consider business needs, visa feasibility, etc.<br>📌 交通费用均为参考数据，实际费用请参考差旅预订平台的价格。Transport costs are reference data; check your booking platform for actual prices.</div>`;
+    <div class="note-box">⚠️ 差旅和LTBS按出差${days}天计算；派驻成本 = 补贴 + 税负平衡 + 个税申报。实际决策需综合考虑业务需求、签证可行性、员工意愿等因素。Travel & LTBS based on ${days} travel days; Dispatch cost = Subsidy + Tax Eq. + Tax Filing. Actual decisions should consider business needs, visa feasibility, etc.<br>📌 交通费用均为参考数据，实际费用请参考差旅预订平台的价格。Transport costs are reference data; check your booking platform for actual prices.</div>`;
   panel.classList.add('show');
 }
 
