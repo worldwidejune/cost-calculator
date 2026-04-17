@@ -476,6 +476,681 @@ const HARDSHIP = {
   "墨西哥":{"一档":9700,"二档":21300,"三档":30500}
 };
 
+// ===== 各国/地区个人所得税累进税率表 (年度, 本币) =====
+// 数据更新: 2025/2026税年 | 来源: 各国税务局官网、PWC Tax Summaries、KPMG
+// 注: 仅包含中央/联邦级个税; 部分国家有地方税另行标注
+// brackets: [上限(本币), 税率], 最后一档上限用Infinity
+// currency: 税率表适用的货币
+// standardDeduction: 年度基本免税额/标准扣除 (本币)
+// socialInsRate: 员工侧社保费率上限估算 (用于计算应税所得)
+const TAX_TABLES = {
+  // 中国: 综合所得7级超额累进 (年度)
+  "中国": {
+    currency: "CNY",
+    standardDeduction: 60000, // 年基本减除费用
+    // 简化: 不单独算三险一金, 用一个综合扣除估算
+    socialInsRate: 0.105, // 养老8%+医疗2%+失业0.5% ≈ 10.5%
+    socialInsCap: 400000,  // 社保基数上限对应的年缴上限估算
+    brackets: [
+      [36000,   0.03],
+      [144000,  0.10],
+      [300000,  0.20],
+      [420000,  0.25],
+      [660000,  0.30],
+      [960000,  0.35],
+      [Infinity, 0.45]
+    ]
+  },
+  // 香港: 薪俸税累进税率 2024/25 (HKD)
+  "中国香港": {
+    currency: "HKD",
+    standardDeduction: 132000, // 基本免税额
+    socialInsRate: 0.05, // MPF 5%, 上限 HKD 1,500/月
+    socialInsCap: 18000,
+    brackets: [
+      [50000,   0.02],
+      [50000,   0.06], // 注: HK用的是每档宽度, 这里转为累计上限
+      [50000,   0.10],
+      [50000,   0.14],
+      [Infinity, 0.17]
+    ],
+    // 香港特殊: 标准税率15%封顶 (取两者较低)
+    flatRate: 0.15,
+    flatDeduction: 0, // 标准税率下无免税额
+    // 香港的累进是按每档"宽度"算, 需要转为累计
+    _isBandWidth: true
+  },
+  // 日本: 所得税 + 复兴特别税 (JPY) 2025
+  "日本东京": {
+    currency: "JPY",
+    standardDeduction: 480000, // 基础控除
+    // 日本有给与所得控除(工资收入扣除), 简化用一个综合扣除
+    salaryDeduction: function(income) {
+      // 给与所得控除 (2025)
+      if (income <= 1625000) return 550000;
+      if (income <= 1800000) return income * 0.40 - 100000;
+      if (income <= 3600000) return income * 0.30 + 80000;
+      if (income <= 6600000) return income * 0.20 + 440000;
+      if (income <= 8500000) return income * 0.10 + 1100000;
+      return 1950000; // 上限
+    },
+    socialInsRate: 0.15, // 厚生年金+健保+雇用保险 ≈ 15%
+    socialInsCap: 10000000,
+    brackets: [
+      [1950000,   0.05],
+      [3300000,   0.10],
+      [6950000,   0.20],
+      [9000000,   0.23],
+      [18000000,  0.33],
+      [40000000,  0.40],
+      [Infinity,  0.45]
+    ],
+    surcharge: 0.021 // 复兴特别税 = 所得税额 x 2.1%
+    // 注: 还有住民税约10%, 但属地方税, 先不纳入联邦级
+  },
+  // 韩国: 综合所得税 (KRW) 2025
+  "韩国首尔": {
+    currency: "KRW",
+    standardDeduction: 1500000, // 基本扣除
+    socialInsRate: 0.09, // 国民年金4.5%+健保3.545%+雇用保险0.9%
+    socialInsCap: 60000000,
+    brackets: [
+      [14000000,   0.06],
+      [50000000,   0.15],
+      [88000000,   0.24],
+      [150000000,  0.35],
+      [300000000,  0.38],
+      [500000000,  0.40],
+      [1000000000, 0.42],
+      [Infinity,   0.45]
+    ],
+    // 韩国还有地方所得税 = 所得税 x 10%
+    localTaxRate: 0.10
+  },
+  // 新加坡: 居民个税 (SGD) YA2025
+  "新加坡": {
+    currency: "SGD",
+    standardDeduction: 0, // 新加坡无标准免税额, 但有个人减免
+    personalRelief: 1000, // Earned Income Relief
+    socialInsRate: 0.20, // CPF 员工20% (但外国人通常不缴或减免)
+    socialInsCap: 0, // 外派人员通常不缴CPF
+    brackets: [
+      [20000,   0],
+      [30000,   0.02],
+      [40000,   0.035],
+      [80000,   0.07],
+      [120000,  0.115],
+      [160000,  0.15],
+      [200000,  0.18],
+      [240000,  0.19],
+      [280000,  0.195],
+      [320000,  0.20],
+      [500000,  0.22],
+      [1000000, 0.23],
+      [Infinity, 0.24]
+    ]
+  },
+  // 泰国: 个人所得税 (THB) 2025
+  "泰国曼谷": {
+    currency: "THB",
+    standardDeduction: 60000, // 个人免税额
+    expenseDeduction: 100000, // 费用扣除 (50%, 上限10万)
+    socialInsRate: 0.05,
+    socialInsCap: 9000, // 月上限750THB x 12
+    brackets: [
+      [150000,   0],
+      [300000,   0.05],
+      [500000,   0.10],
+      [750000,   0.15],
+      [1000000,  0.20],
+      [2000000,  0.25],
+      [5000000,  0.30],
+      [Infinity,  0.35]
+    ]
+  },
+  // 马来西亚: 个人所得税 (MYR) YA2025
+  "马来西亚吉隆坡": {
+    currency: "MYR",
+    standardDeduction: 9000, // 个人减免
+    socialInsRate: 0.11, // EPF 11% (外国人可能不缴)
+    socialInsCap: 0, // 外派通常不缴
+    brackets: [
+      [5000,    0],
+      [20000,   0.01],
+      [35000,   0.03],
+      [50000,   0.06],
+      [70000,   0.11],
+      [100000,  0.19],
+      [400000,  0.25],
+      [600000,  0.26],
+      [2000000, 0.28],
+      [Infinity, 0.30]
+    ]
+  },
+  // 印尼: 个人所得税 (IDR) 2025 — 用PPh21新规
+  "印尼雅加达": {
+    currency: "IDR",
+    standardDeduction: 54000000, // PTKP 单身
+    socialInsRate: 0.03, // JHT 2% + JP 1%
+    socialInsCap: 0,
+    brackets: [
+      [60000000,    0.05],
+      [250000000,   0.15],
+      [500000000,   0.25],
+      [5000000000,  0.30],
+      [Infinity,     0.35]
+    ]
+  },
+  // 阿联酋迪拜: 无个人所得税
+  "阿联酋迪拜": {
+    currency: "AED",
+    standardDeduction: 0,
+    socialInsRate: 0.05, // GPSSA 5% (UAE nationals); expats usually 0
+    socialInsCap: 0,
+    brackets: [
+      [Infinity, 0] // 无个税!
+    ]
+  },
+  // 沙特: 无个人所得税 (仅对非GCC国民有预提税, 但雇佣收入免)
+  "沙特利雅得": {
+    currency: "SAR",
+    standardDeduction: 0,
+    socialInsRate: 0.10, // GOSI 10% (expats 2%)
+    socialInsCap: 0,
+    brackets: [
+      [Infinity, 0]
+    ]
+  },
+  // 美国: 联邦个税 (USD) 2025 — 单身申报
+  "美国洛杉矶": {
+    currency: "USD",
+    standardDeduction: 15000, // 2025 standard deduction single
+    socialInsRate: 0.0765, // SS 6.2% + Medicare 1.45%
+    socialInsCap: 176100, // SS wage base 2025
+    brackets: [
+      [11925,   0.10],
+      [48475,   0.12],
+      [103350,  0.22],
+      [197300,  0.24],
+      [250525,  0.32],
+      [626350,  0.35],
+      [Infinity, 0.37]
+    ],
+    // 加州州税简化 (约5-9% effective)
+    stateTaxRate: 0.07
+  },
+  "美国旧金山": null, // 复用洛杉矶
+  "美国纽约": {
+    currency: "USD",
+    standardDeduction: 15000,
+    socialInsRate: 0.0765,
+    socialInsCap: 176100,
+    brackets: [
+      [11925,   0.10],
+      [48475,   0.12],
+      [103350,  0.22],
+      [197300,  0.24],
+      [250525,  0.32],
+      [626350,  0.35],
+      [Infinity, 0.37]
+    ],
+    // 纽约州+市税 约 8-10%
+    stateTaxRate: 0.09
+  },
+  // 英国: Income Tax (GBP) 2025-26
+  "英国伦敦": {
+    currency: "GBP",
+    standardDeduction: 12570, // Personal Allowance
+    socialInsRate: 0.08, // NI Class 1: 8% (2025-26)
+    socialInsCap: 50270, // 上限阈值
+    brackets: [
+      [37700,   0.20],
+      [125140,  0.40],
+      [Infinity, 0.45]
+    ],
+    // 注: 超过100k, personal allowance逐步取消
+    paPhaseout: 100000
+  },
+  // 法国: Impot sur le revenu (EUR) 2025 — 单人
+  "法国巴黎": {
+    currency: "EUR",
+    standardDeduction: 0, // 法国用10%费用扣除
+    expenseDeductionRate: 0.10, // 10% 工资扣除, 上限约14,000 EUR
+    expenseDeductionCap: 14171,
+    socialInsRate: 0.22, // 员工社保 约22% (CSG+CRDS+退休+失业等)
+    socialInsCap: 0, // 外派通常不在法国缴社保
+    brackets: [
+      [11497,   0],
+      [29315,   0.11],
+      [83823,   0.30],
+      [180294,  0.41],
+      [Infinity, 0.45]
+    ]
+  },
+  // 德国: Einkommensteuer (EUR) 2025
+  "德国法兰克福": {
+    currency: "EUR",
+    standardDeduction: 12096, // Grundfreibetrag 2025
+    socialInsRate: 0.20, // 养老9.3%+医疗7.3%+失业1.3%+护理1.7%
+    socialInsCap: 0, // 外派通常不在德国缴社保
+    // 德国税率为连续公式, 这里用简化的分段近似
+    brackets: [
+      [17005,   0.14], // 14%-24% 渐进, 取中间值
+      [66761,   0.24], // 24%-42% 渐进
+      [277826,  0.42],
+      [Infinity, 0.45]
+    ]
+  },
+  // 巴西: IRPF (BRL) 2025
+  "巴西圣保罗": {
+    currency: "BRL",
+    standardDeduction: 26963.28, // 年免税额 (2,247 x 12)
+    socialInsRate: 0.11, // INSS 7.5-14%, 取均值
+    socialInsCap: 0,
+    brackets: [
+      [26963.28,  0],
+      [33919.80,  0.075],
+      [45012.60,  0.15],
+      [55976.16,  0.225],
+      [Infinity,   0.275]
+    ]
+  },
+  // 加拿大: 联邦个税 (CAD) 2025
+  "加拿大多伦多": {
+    currency: "CAD",
+    standardDeduction: 16129, // Basic personal amount 2025
+    socialInsRate: 0.073, // CPP 5.95% + EI 1.58%
+    socialInsCap: 73200,
+    brackets: [
+      [57375,   0.15],
+      [114750,  0.205],
+      [158468,  0.26],
+      [220708,  0.29],
+      [Infinity, 0.33]
+    ],
+    // 安大略省税 约 5-11%
+    stateTaxRate: 0.08
+  },
+  // 墨西哥: ISR (MXN) 2025
+  "墨西哥": {
+    currency: "MXN",
+    standardDeduction: 0, // 墨西哥无标准扣除
+    socialInsRate: 0.025,
+    socialInsCap: 0,
+    brackets: [
+      [8952.49,     0.0192],
+      [75984.55,    0.0640],
+      [133536.07,   0.1088],
+      [155229.80,   0.16],
+      [185852.57,   0.1792],
+      [374837.88,   0.2136],
+      [590795.99,   0.2352],
+      [1127926.84,  0.30],
+      [1503902.46,  0.32],
+      [4511707.37,  0.34],
+      [Infinity,     0.35]
+    ]
+  },
+  // 波兰: PIT (PLN) 2025
+  "波兰华沙": {
+    currency: "PLN",
+    standardDeduction: 30000, // kwota wolna 2024/25
+    socialInsRate: 0.1371, // ZUS contributions
+    socialInsCap: 0,
+    brackets: [
+      [120000,  0.12],
+      [Infinity, 0.32]
+    ]
+  },
+  // 土耳其: Gelir Vergisi (TRY) 2025
+  "土耳其伊斯坦布尔": {
+    currency: "TRY",
+    standardDeduction: 0,
+    socialInsRate: 0.14,
+    socialInsCap: 0,
+    brackets: [
+      [158000,   0.15],
+      [330000,   0.20],
+      [800000,   0.27],
+      [4300000,  0.35],
+      [Infinity,  0.40]
+    ]
+  },
+  // 荷兰: IB (EUR) 2025
+  "荷兰阿姆斯特丹": {
+    currency: "EUR",
+    standardDeduction: 0, // 通过heffingskorting (tax credit)减免
+    taxCredit: 3362, // Algemene heffingskorting 2025
+    socialInsRate: 0.2774, // 含volksverzekeringen
+    socialInsCap: 0,
+    brackets: [
+      [38441,   0.3697],
+      [75624,   0.3697],
+      [Infinity, 0.4950]
+    ]
+  }
+};
+
+// 复用配置
+TAX_TABLES["美国旧金山"] = TAX_TABLES["美国洛杉矶"];
+
+// ===== 税负平衡计算引擎 =====
+
+/**
+ * 通用累进税计算 (处理各国不同税制)
+ * @param {number} taxableIncome - 应税所得 (本币)
+ * @param {string} dest - 目的地名称
+ * @returns {number} 应缴税额 (本币)
+ */
+function calcTaxByBrackets(taxableIncome, dest) {
+  const table = TAX_TABLES[dest];
+  if (!table || taxableIncome <= 0) return 0;
+
+  let tax = 0;
+  const brackets = table.brackets;
+
+  if (table._isBandWidth) {
+    // 香港: 按每档宽度计算
+    let remaining = taxableIncome;
+    for (const [bandWidth, rate] of brackets) {
+      if (remaining <= 0) break;
+      const taxable = Math.min(remaining, bandWidth === Infinity ? remaining : bandWidth);
+      tax += taxable * rate;
+      remaining -= taxable;
+    }
+    // 香港: 与标准税率比较取较低
+    if (table.flatRate) {
+      const flatTax = (taxableIncome + (table.standardDeduction || 0)) * table.flatRate;
+      tax = Math.min(tax, flatTax);
+    }
+  } else {
+    // 标准累进税率
+    let prev = 0;
+    for (const [upper, rate] of brackets) {
+      if (taxableIncome <= prev) break;
+      const taxable = Math.min(taxableIncome, upper) - prev;
+      tax += taxable * rate;
+      prev = upper;
+    }
+  }
+
+  // 附加税: 复兴税(日本)
+  if (table.surcharge) tax *= (1 + table.surcharge);
+
+  // 地方所得税: 韩国 (所得税x10%)
+  if (table.localTaxRate) tax *= (1 + table.localTaxRate);
+
+  // 州/省税 (美国/加拿大简化)
+  if (table.stateTaxRate) tax += taxableIncome * table.stateTaxRate;
+
+  // 荷兰: 减税额 (tax credit)
+  if (table.taxCredit) tax = Math.max(0, tax - table.taxCredit);
+
+  return Math.round(tax * 100) / 100;
+}
+
+/**
+ * 计算某国应税所得 (考虑扣除项)
+ * @param {number} grossIncome - 税前收入 (本币)
+ * @param {string} dest - 目的地名称
+ * @returns {number} 应税所得
+ */
+function calcTaxableIncome(grossIncome, dest) {
+  const table = TAX_TABLES[dest];
+  if (!table) return grossIncome;
+
+  let taxable = grossIncome;
+
+  // 标准免税额/基本扣除
+  taxable -= (table.standardDeduction || 0);
+
+  // 个人减免 (新加坡)
+  if (table.personalRelief) taxable -= table.personalRelief;
+
+  // 费用扣除 (泰国)
+  if (table.expenseDeduction) taxable -= Math.min(table.expenseDeduction, grossIncome * 0.5);
+
+  // 费用扣除率 (法国)
+  if (table.expenseDeductionRate) {
+    const deduction = Math.min(grossIncome * table.expenseDeductionRate, table.expenseDeductionCap || Infinity);
+    taxable -= deduction;
+  }
+
+  // 日本: 给与所得控除
+  if (table.salaryDeduction) taxable -= table.salaryDeduction(grossIncome);
+
+  // 英国: Personal Allowance phase-out (超100k逐步取消)
+  if (table.paPhaseout && grossIncome > table.paPhaseout) {
+    const reduction = Math.min(table.standardDeduction, (grossIncome - table.paPhaseout) / 2);
+    taxable += reduction; // 加回被减掉的部分
+  }
+
+  return Math.max(0, taxable);
+}
+
+/**
+ * 计算指定国家的个税 (完整流程: 收入 → 应税所得 → 税额)
+ * @param {number} grossIncome - 税前年收入 (本币)
+ * @param {string} dest - 国家/地区名称
+ * @returns {number} 个税税额 (本币)
+ */
+function calcCountryTax(grossIncome, dest) {
+  const taxable = calcTaxableIncome(grossIncome, dest);
+  return calcTaxByBrackets(taxable, dest);
+}
+
+/**
+ * 将CNY金额转换为目的地货币
+ */
+function cnYToLocal(amountCNY, dest) {
+  const table = TAX_TABLES[dest];
+  if (!table) return amountCNY;
+  const cur = table.currency;
+  if (cur === "CNY") return amountCNY;
+  const rate = RATES[cur];
+  if (!rate || rate === 0) return amountCNY;
+  return amountCNY / rate; // 1外币=rate CNY, 所以 CNY/rate = 外币
+}
+
+/**
+ * 将目的地货币转换为CNY
+ */
+function localToCNY(amountLocal, dest) {
+  const table = TAX_TABLES[dest];
+  if (!table) return amountLocal;
+  const cur = table.currency;
+  if (cur === "CNY") return amountLocal;
+  const rate = RATES[cur];
+  if (!rate) return amountLocal;
+  return amountLocal * rate;
+}
+
+/**
+ * 税后津贴倒算税前 (给定税后金额, 反推税前)
+ * 使用迭代法: 目标是找到 gross 使得 gross - tax(gross) = netAmount
+ * @param {number} netAmountLocal - 税后津贴 (目的地本币)
+ * @param {number} existingIncomeLocal - 已有应税收入基数 (本币), 用于确定边际税率
+ * @param {string} dest - 目的地
+ * @returns {number} 税前金额 (本币)
+ */
+function grossUpAllowance(netAmountLocal, existingIncomeLocal, dest) {
+  const table = TAX_TABLES[dest];
+  if (!table) return netAmountLocal;
+
+  // 如果该国无个税(如UAE/沙特), 税前=税后
+  const maxRate = table.brackets[table.brackets.length - 1][1];
+  if (maxRate === 0) return netAmountLocal;
+
+  // 二分法迭代求解
+  let lo = netAmountLocal;
+  let hi = netAmountLocal * 3; // 最高税率45%时, gross ≈ net / 0.55 ≈ net * 1.82
+  for (let i = 0; i < 50; i++) {
+    const mid = (lo + hi) / 2;
+    const totalIncome = existingIncomeLocal + mid;
+    const baseTax = calcCountryTax(existingIncomeLocal, dest);
+    const totalTax = calcCountryTax(totalIncome, dest);
+    const incrementalTax = totalTax - baseTax;
+    const netResult = mid - incrementalTax;
+    if (Math.abs(netResult - netAmountLocal) < 1) return mid;
+    if (netResult < netAmountLocal) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/**
+ * 计算税上税 (公司承担税额被视为收入, 需递归缴税)
+ * 公式: 假设公司承担税额为N, 边际税率为r
+ * 税上税 = N*r + N*r*r + N*r*r*r + ... = N * r / (1 - r)
+ * (等比级数求和)
+ * @param {number} companyBorneRaw - 公司承担的原始税额 (CNY)
+ * @param {number} marginalRate - 适用的边际税率
+ * @returns {number} 税上税金额 (CNY)
+ */
+function calcTaxOnTax(companyBorneRaw, marginalRate) {
+  if (marginalRate <= 0 || marginalRate >= 1) return 0;
+  // 等比级数: S = N * r / (1 - r)
+  return companyBorneRaw * marginalRate / (1 - marginalRate);
+}
+
+/**
+ * 获取某收入水平在中国的边际税率
+ */
+function getChinaMarginalRate(taxableIncome) {
+  const brackets = TAX_TABLES["中国"].brackets;
+  let prev = 0;
+  for (const [upper, rate] of brackets) {
+    if (taxableIncome <= upper) return rate;
+    prev = upper;
+  }
+  return 0.45; // 最高档
+}
+
+/**
+ * 完整税负平衡成本计算
+ * @param {number} salaryCNY - 员工税前年薪 (CNY)
+ * @param {string} dest - 派驻目的地
+ * @param {number} months - 派驻月数
+ * @param {number} totalAllowanceCNY - 派驻期间税后津贴总额 (CNY)
+ * @returns {object} 税负平衡明细
+ */
+function calcTaxEqualization(salaryCNY, dest, months, totalAllowanceCNY) {
+  const table = TAX_TABLES[dest];
+
+  // === Step 1: 计算员工派驻前的"原应缴税额" (中国个税) ===
+  // 按年薪计算中国个税 (简化: 不扣社保, 只用基本减除)
+  const cnTaxable = calcTaxableIncome(salaryCNY, "中国");
+  const originalTaxAnnual = calcCountryTax(salaryCNY, "中国");
+  const originalTaxPeriod = originalTaxAnnual * (months / 12);
+
+  // === Step 2: 计算派出国(中国)应缴税额 ===
+  // 派驻期间, 工资仍在中国发放, 按年薪比例计算
+  const cnSalaryPeriod = salaryCNY * (months / 12);
+  const cnTaxPeriod = originalTaxPeriod; // 派出国税额 = 原税额 (工资不变)
+
+  // === Step 3: 倒算税前津贴 ===
+  // 津贴是税后金额, 需要倒算为税前来计算派驻国个税
+  // 先转为当地货币
+  let grossAllowanceLocal = 0;
+  let netAllowanceLocal = 0;
+
+  if (table && table.currency !== "CNY") {
+    netAllowanceLocal = cnYToLocal(totalAllowanceCNY, dest);
+    // 以派驻期间的工资(转为当地货币)作为基数确定边际税率
+    const salaryLocal = cnYToLocal(cnSalaryPeriod, dest);
+    grossAllowanceLocal = grossUpAllowance(netAllowanceLocal, salaryLocal, dest);
+  } else if (table) {
+    netAllowanceLocal = totalAllowanceCNY;
+    grossAllowanceLocal = grossUpAllowance(netAllowanceLocal, cnSalaryPeriod, dest);
+  }
+
+  const grossAllowanceCNY = localToCNY(grossAllowanceLocal, dest);
+  const allowanceTaxCNY = grossAllowanceCNY - totalAllowanceCNY; // 津贴部分的税额
+
+  // === Step 4: 计算派驻国应缴税额 (工资+税前津贴) ===
+  let hostTaxLocal = 0;
+  if (table) {
+    const salaryLocal = cnYToLocal(cnSalaryPeriod, dest);
+    const totalIncomeLocal = salaryLocal + grossAllowanceLocal;
+    hostTaxLocal = calcCountryTax(totalIncomeLocal, dest);
+  }
+  const hostTaxCNY = localToCNY(hostTaxLocal, dest);
+
+  // === Step 5: 公司承担税额 = 派驻国税 + 派出国税 - 员工原应缴税额 ===
+  const companyBorneRaw = hostTaxCNY + cnTaxPeriod - originalTaxPeriod;
+  // 注: cnTaxPeriod == originalTaxPeriod, 所以简化为:
+  // companyBorneRaw = hostTaxCNY (当工资没变时)
+  // 但实际上还包括津贴部分在派出国的潜在税负
+  // 更准确的计算: 公司承担 = 两国总税额 - 员工原税额
+  const totalTaxBothCountries = hostTaxCNY + cnTaxPeriod;
+  const companyBorne = Math.max(0, totalTaxBothCountries - originalTaxPeriod);
+
+  // === Step 6: 税上税计算 ===
+  // 确定边际税率 (取派驻国和派出国中较高的边际税率)
+  const cnMarginalRate = getChinaMarginalRate(cnTaxable);
+  let hostMarginalRate = 0;
+  if (table) {
+    const totalIncomeLocal = cnYToLocal(cnSalaryPeriod, dest) + grossAllowanceLocal;
+    const taxableLocal = calcTaxableIncome(totalIncomeLocal, dest);
+    // 找到对应的边际税率
+    const brackets = table.brackets;
+    if (table._isBandWidth) {
+      // 香港: 取标准税率和累进的较低
+      let cumWidth = 0;
+      for (const [bw, rate] of brackets) {
+        cumWidth += (bw === Infinity ? taxableLocal : bw);
+        if (taxableLocal <= cumWidth) { hostMarginalRate = rate; break; }
+      }
+      if (table.flatRate) hostMarginalRate = Math.min(hostMarginalRate || table.flatRate, table.flatRate);
+    } else {
+      let prev = 0;
+      for (const [upper, rate] of brackets) {
+        if (taxableLocal <= upper) { hostMarginalRate = rate; break; }
+        prev = upper;
+      }
+    }
+    if (table.surcharge) hostMarginalRate *= (1 + table.surcharge);
+    if (table.localTaxRate) hostMarginalRate *= (1 + table.localTaxRate);
+    if (table.stateTaxRate) hostMarginalRate += table.stateTaxRate;
+  }
+
+  // 用公司承担税额所归属的国家的边际税率来算税上税
+  // 公司承担的税额被视为中国境内的员工收入
+  const taxOnTaxRate = cnMarginalRate; // 税上税按中国税率
+  const taxOnTax = calcTaxOnTax(companyBorne, taxOnTaxRate);
+
+  // === 汇总 ===
+  const totalTaxEqualization = companyBorne + taxOnTax;
+
+  return {
+    // 员工原税额
+    originalTaxAnnual,
+    originalTaxPeriod,
+    // 派出国税额
+    cnTaxPeriod,
+    // 派驻国税额
+    hostTaxCNY,
+    hostTaxLocal,
+    hostCurrency: table ? table.currency : "CNY",
+    // 津贴倒算
+    netAllowanceCNY: totalAllowanceCNY,
+    grossAllowanceCNY,
+    allowanceTaxCNY,
+    // 公司承担
+    companyBorne,
+    // 税上税
+    taxOnTaxRate,
+    taxOnTax,
+    // 合计
+    totalTaxEqualization,
+    // 边际税率信息
+    cnMarginalRate,
+    hostMarginalRate,
+    // 等效比率 (vs 15%估算的对比)
+    effectiveRate: salaryCNY > 0 ? totalTaxEqualization / (salaryCNY * (months/12) + totalAllowanceCNY) : 0
+  };
+}
+
 // ===== 签证政策数据 (中国普通护照) - 数据更新: 2026-04 =====
 // 来源: 外交部领事服务网、各国移民局官网、中外互免签证协定一览表
 // types[].maxStay: 单次最大停留天数; types[].scenario: 适用场景 (biz=商务出差, work=长期工作, transit=过境)
@@ -858,9 +1533,9 @@ function doCalcDispatch(dest, months, family, level, salary) {
   // 个税申报费用
   const taxFilingFee = 60000;
 
-  // 税负平衡成本 (用员工总收入的15%估算)
-  const totalIncome = salary + periodSubsidy;
-  const taxEqualization = totalIncome * 0.15;
+  // ===== 税负平衡成本精算 =====
+  const taxEqDetail = calcTaxEqualization(salary, dest, months, periodSubsidy);
+  const taxEqualization = taxEqDetail.totalTaxEqualization;
 
   // 增加成本 = 补贴 + 税负平衡 + 个税申报
   const totalCost = periodSubsidy + taxEqualization + taxFilingFee;
@@ -870,7 +1545,8 @@ function doCalcDispatch(dest, months, family, level, salary) {
     hardshipBase, hardshipExtra, hardshipMonthly,
     housingCNY, housingDetail,
     monthlySubsidy, periodSubsidy,
-    taxFilingFee, taxEqualization, totalCost
+    taxFilingFee, taxEqualization, totalCost,
+    taxEqDetail // 详细税负平衡明细
   };
 }
 
@@ -993,6 +1669,9 @@ function calcDispatch() {
   const r = doCalcDispatch(dest, months, family, level, salary);
   const panel = document.getElementById('dispatch-result');
   const hasHardship = r.hardshipBase > 0;
+  const teq = r.taxEqDetail;
+  const hasTaxTable = TAX_TABLES[dest] && TAX_TABLES[dest].brackets[TAX_TABLES[dest].brackets.length - 1][1] > 0;
+  const taxEqUID = 'tax-eq-detail-' + Date.now();
 
   panel.innerHTML = `
     <div class="result-total" style="background:linear-gradient(135deg,#0d904f,#34a853)">
@@ -1020,12 +1699,42 @@ function calcDispatch() {
         <thead><tr><th>成本汇总 Cost Summary</th><th style="text-align:right">金额 Amount (CNY)</th></tr></thead>
         <tbody>
           <tr><td>📊 补贴小计 Subsidy Subtotal（税后 after-tax）（${months}个月 months）</td><td class="amount">¥ ${fmt(r.periodSubsidy)}</td></tr>
-          <tr><td>🧾 税负平衡成本 Tax Equalization（员工总收入的15%估算 est. 15% of total income）</td><td class="amount">¥ ${fmt(r.taxEqualization)}</td></tr>
+          <tr>
+            <td style="cursor:pointer" onclick="document.getElementById('${taxEqUID}').classList.toggle('hidden')">
+              🧾 税负平衡成本 Tax Equalization
+              <span style="font-size:11px;color:var(--primary);margin-left:6px">▶ 点击查看明细 Details</span>
+              ${hasTaxTable ? '<br><span style="font-size:11px;color:var(--text-secondary)">基于' + dest + '税率精算 Calculated with ' + dest + ' tax rates · 等效税率 ≈ ' + (teq.effectiveRate*100).toFixed(1) + '%</span>' : '<br><span style="font-size:11px;color:var(--text-secondary)">该地区无个税 No income tax in this region</span>'}
+            </td>
+            <td class="amount">¥ ${fmt(r.taxEqualization)}</td>
+          </tr>
+          <tr id="${taxEqUID}" class="hidden">
+            <td colspan="2" style="padding:0">
+              <div style="background:#f8f9fa;padding:14px 18px;border-radius:8px;margin:8px 0;font-size:13px;line-height:2">
+                <div style="font-weight:600;color:var(--text);margin-bottom:8px">📐 税负平衡计算明细 Tax Equalization Breakdown</div>
+                <div style="display:grid;grid-template-columns:1fr auto;gap:2px 16px">
+                  <span>① 员工原应缴中国税额 Original CN tax (${months}mo)</span>
+                  <span style="text-align:right;font-weight:600">¥ ${fmt(teq.originalTaxPeriod)}</span>
+                  <span>② 派出国(中国)应缴税额 Home country tax</span>
+                  <span style="text-align:right;font-weight:600">¥ ${fmt(teq.cnTaxPeriod)}</span>
+                  <span>③ 派驻国应缴税额 Host country tax ${hasTaxTable ? '(' + teq.hostCurrency + ' ' + fmtInt(teq.hostTaxLocal) + ')' : ''}</span>
+                  <span style="text-align:right;font-weight:600">¥ ${fmt(teq.hostTaxCNY)}</span>
+                  <span style="border-top:1px dashed #ccc;padding-top:4px">④ 津贴倒算: 税后 ¥${fmt(teq.netAllowanceCNY)} → 税前 ¥${fmt(teq.grossAllowanceCNY)}</span>
+                  <span style="border-top:1px dashed #ccc;padding-top:4px;text-align:right;color:var(--text-secondary)">差额 ¥${fmt(teq.allowanceTaxCNY)}</span>
+                  <span style="border-top:1px dashed #ccc;padding-top:4px">⑤ 公司承担税额 Company-borne = ②+③-①</span>
+                  <span style="border-top:1px dashed #ccc;padding-top:4px;text-align:right;font-weight:600;color:var(--warning)">¥ ${fmt(teq.companyBorne)}</span>
+                  <span>⑥ 税上税 Tax-on-tax (边际税率 ${(teq.taxOnTaxRate*100).toFixed(0)}%)</span>
+                  <span style="text-align:right;font-weight:600;color:var(--danger)">¥ ${fmt(teq.taxOnTax)}</span>
+                  <span style="border-top:2px solid #333;padding-top:6px;font-weight:700">💰 税负平衡合计 Total = ⑤+⑥</span>
+                  <span style="border-top:2px solid #333;padding-top:6px;text-align:right;font-weight:700;color:var(--success);font-size:15px">¥ ${fmt(teq.totalTaxEqualization)}</span>
+                </div>
+              </div>
+            </td>
+          </tr>
           <tr><td>📋 个税申报费用 Tax Filing Fee</td><td class="amount">¥ ${fmtInt(r.taxFilingFee)}</td></tr>
           <tr style="background:var(--success-light);font-weight:700"><td>💰 增加成本粗算 Total Estimate</td><td class="amount" style="color:var(--success);font-size:16px">¥ ${fmt(r.totalCost)}</td></tr>
         </tbody>
       </table>
-      <div class="note-box">⚠️ 以上为增加成本粗算。税负平衡按员工总收入的15%估算（实际12%-18%不等）。各国税负差异较大，具体以实际产生为准。Estimated cost only. Tax equalization est. at 15% (actual 12%-18%). Varies by country.</div>
+      <div class="note-box">⚠️ 税负平衡基于${dest}当地税率精算，含公司承担税额+税上税。各国税制复杂，实际以税务顾问核定为准。Tax equalization calculated with ${dest} tax rates, incl. company-borne tax + tax-on-tax. Actual amount subject to tax advisor confirmation.<br>📌 计算逻辑: 公司承担(派驻国税+派出国税-员工原税额) + 税上税(边际税率${(teq.taxOnTaxRate*100).toFixed(0)}%递归) Calculation: Company bears (host tax + home tax - original tax) + tax-on-tax</div>
     </div>`;
   panel.classList.add('show');
 }
@@ -1193,7 +1902,7 @@ function calcCompare() {
         <div class="card-title"><span class="icon">🏠</span> 国际派驻 Dispatch (${family}) ${getBadge(schemes[2])}</div>
         <table class="result-table">
           <tr><td>补贴小计 Subsidy</td><td class="amount">¥ ${fmt(d.periodSubsidy)}</td></tr>
-          <tr><td>税负平衡 Tax Eq.</td><td class="amount">¥ ${fmt(d.taxEqualization)}</td></tr>
+          <tr><td>税负平衡 Tax Eq.<br><span style="font-size:10px;color:var(--text-secondary)">精算 Calculated · ≈${(d.taxEqDetail.effectiveRate*100).toFixed(0)}%</span></td><td class="amount">¥ ${fmt(d.taxEqualization)}</td></tr>
           <tr><td>个税申报 Tax Filing</td><td class="amount">¥ ${fmtInt(d.taxFilingFee)}</td></tr>
           <tr style="background:var(--success-light);font-weight:700"><td>合计 Total</td><td class="amount" style="color:var(--success)">¥ ${fmt(d.totalCost)}</td></tr>
         </table>
