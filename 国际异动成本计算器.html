@@ -1746,8 +1746,9 @@ function calcDispatch() {
           <tr><td>📊 补贴小计 Subsidy Subtotal（税后 after-tax）（${months}个月 months）</td><td class="amount">¥ ${fmt(r.periodSubsidy)}</td></tr>
           <tr>
             <td style="cursor:pointer" onclick="document.getElementById('${taxEqUID}').classList.toggle('hidden')">
-              🧾 税负平衡成本 Tax Equalization
+              🧾 税负平衡估算 Tax Equalization
               <span style="font-size:11px;color:var(--primary);margin-left:6px">▶ 点击查看明细 Details</span>
+              <br><span style="font-size:11px;color:var(--text-secondary)">以税务专家提供为准</span>
             </td>
             <td class="amount">¥ ${fmt(r.taxEqualization)}</td>
           </tr>
@@ -1763,7 +1764,7 @@ function calcDispatch() {
                   <span style="text-align:right;font-weight:600">¥ ${fmt(teq.originalTaxPeriod)}</span>
                   <span style="border-top:1px dashed #ccc;padding-top:4px">② 中国税(全球收入: 100%工资+税前津贴 = ¥${fmt(teq.cnGlobalIncomePeriod)})</span>
                   <span style="text-align:right;font-weight:600">¥ ${fmt(teq.cnGlobalTaxPeriod)}</span>
-                  <span style="font-size:11px;color:var(--text-secondary);padding-left:16px">&nbsp;&nbsp;↳ 津贴倒算: 税后 ¥${fmt(teq.netAllowanceCNY)} → 税前 ¥${fmt(teq.grossAllowanceCNY)}（差额 ¥${fmt(teq.allowanceTaxCNY)}）</span>
+                  <span style="font-size:11px;color:var(--text-secondary);padding-left:16px">&nbsp;&nbsp;↳ 津贴倒算: 税后 ¥${fmt(teq.netAllowanceCNY)} → 税前 ¥${fmt(teq.grossAllowanceCNY)}</span>
                   <span></span>
                   <span style="border-top:1px dashed #ccc;padding-top:4px">③ ${dest}税 (全部收入 ¥${fmt(teq.hostFullSalaryCNY)} + 津贴) ${hasTaxTable ? '(' + teq.hostCurrency + ' ' + fmtInt(teq.hostTaxLocal) + ')' : ''}</span>
                   <span style="text-align:right;font-weight:600">¥ ${fmt(teq.hostTaxCNY)}</span>
