@@ -1680,7 +1680,9 @@ function calcTravel() {
   const panel = document.getElementById('travel-result');
   if (!r) { panel.innerHTML = '<div class="card" style="color:var(--danger)">未找到该路线的交通数据 Route data not found</div>'; panel.classList.add('show'); return; }
 
+  const travelTaxWarn = r.days > 183;
   panel.innerHTML = `
+    ${travelTaxWarn ? '<div style="background:#fff3e0;border:1px solid #e37400;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px"><span style="font-size:20px">⚠️</span><div><strong style="color:#e37400">税务风险提示 Tax Risk Warning</strong><br><span style="font-size:13px;color:#5f6368">出差天数 >' + ' 183 天，可能触发派驻国税务居民身份，建议改为<strong>国际派驻方案</strong>。<br>Travel days exceed 183, which may trigger tax residency in the host country. Consider switching to <strong>International Dispatch</strong>.</span></div></div>' : ''}
     <div class="result-total" style="background:linear-gradient(135deg, var(--primary), #4285f4)">
       <div class="label">国际差旅 · 增加成本粗算 Travel · Incremental Cost Estimate</div>
       <div class="amount">¥ ${fmt(r.total)}</div>
@@ -1808,8 +1810,10 @@ function calcLTBS() {
   if (!t) { panel.innerHTML = '<div class="card" style="color:var(--danger)">未找到该路线的交通数据 Route data not found</div>'; panel.classList.add('show'); return; }
 
   const ltbsTotal = t.total * 0.85;
+  const ltbsTaxWarn = days > 183;
 
   panel.innerHTML = `
+    ${ltbsTaxWarn ? '<div style="background:#fff3e0;border:1px solid #e37400;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px"><span style="font-size:20px">⚠️</span><div><strong style="color:#e37400">税务风险提示 Tax Risk Warning</strong><br><span style="font-size:13px;color:#5f6368">出差天数 > 183 天，可能触发派驻国税务居民身份，建议改为<strong>国际派驻方案</strong>。<br>Travel days exceed 183, which may trigger tax residency in the host country. Consider switching to <strong>International Dispatch</strong>.</span></div></div>' : ''}
     <div class="result-total" style="background:linear-gradient(135deg, var(--purple), #a855f7)">
       <div class="label">LTBS · 成本粗算 Cost Estimate</div>
       <div class="amount">¥ ${fmt(ltbsTotal)}</div>
@@ -1911,7 +1915,7 @@ function calcCompare() {
   // 英文不再单独一行，已融合到上面
 
   // 税务风险标签（差旅和LTBS统一）
-  const taxRiskTag183 = '<div style="color:var(--danger);font-size:13px;margin-top:6px">⚠️ ≥183天税务风险 Tax risk</div>';
+  const taxRiskTag183 = '<div style="color:var(--danger);font-size:13px;margin-top:6px">⚠️ >183天税务风险 Tax risk</div>';
   const travelRiskTag = travelTaxRisk ? taxRiskTag183 : '';
   const ltbsRiskTag = ltbsTaxRisk ? taxRiskTag183 : '';
 
@@ -1964,7 +1968,7 @@ function calcCompare() {
       </div>
     </div>
     <div class="note-box">
-      📋 推荐逻辑 Logic：合规 Compliance → 成本 Cost　|　≥183天出差有税务风险 ≥183 days = tax risk　|　派驻 Dispatch 6-36个月 mo<br>
+      📋 推荐逻辑 Logic：合规 Compliance → 成本 Cost　|　>183天出差有税务风险 >183 days = tax risk　|　派驻 Dispatch 6-36个月 mo<br>
       📌 交通费用为参考数据 Transport costs are estimates
     </div>`;
   panel.classList.add('show');
