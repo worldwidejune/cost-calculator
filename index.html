@@ -1036,66 +1036,66 @@ function getChinaMarginalRate(taxableIncome) {
  */
 function calcTaxEqualization(salaryCNY, dest, months, totalAllowanceCNY) {
   const table = TAX_TABLES[dest];
+  const splitRatio = 0.5; // 两地发薪比例: 50% 中国, 50% 派驻国
 
   // === Step 1: 计算员工派驻前的"原应缴税额" (中国个税) ===
-  // 按年薪计算中国个税 (简化: 不扣社保, 只用基本减除)
+  // 假设未外派时100%在中国发薪, 全额按中国税率
   const cnTaxable = calcTaxableIncome(salaryCNY, "中国");
   const originalTaxAnnual = calcCountryTax(salaryCNY, "中国");
   const originalTaxPeriod = originalTaxAnnual * (months / 12);
 
-  // === Step 2: 计算派出国(中国)应缴税额 ===
-  // 派驻期间, 工资仍在中国发放, 按年薪比例计算
-  const cnSalaryPeriod = salaryCNY * (months / 12);
-  const cnTaxPeriod = originalTaxPeriod; // 派出国税额 = 原税额 (工资不变)
+  // === Step 2: 两地发薪 — 派出国(中国)侧税额 ===
+  // 派驻期间50%工资在中国发放, 按中国税率对这50%计税
+  const cnSalaryPeriod = salaryCNY * (months / 12);          // 全额工资(期间)
+  const cnSalaryHalf = cnSalaryPeriod * splitRatio;           // 中国侧发放50%
+  const cnHalfAnnualized = cnSalaryHalf * (12 / months);     // 年化(用于累进税率)
+  const cnTaxAnnualized = calcCountryTax(cnHalfAnnualized, "中国");
+  const cnTaxPeriod = cnTaxAnnualized * (months / 12);        // 期间税额
 
-  // === Step 3: 倒算税前津贴 ===
-  // 津贴是税后金额, 需要倒算为税前来计算派驻国个税
-  // 先转为当地货币
+  // === Step 3: 两地发薪 — 派驻国侧税额 ===
+  // 50%工资在派驻国发放 + 税前津贴(倒算)
+  const hostSalaryHalf = cnSalaryPeriod * splitRatio;         // 派驻国侧发放50%(CNY)
+
+  // 3a: 倒算税前津贴(税后→税前)
   let grossAllowanceLocal = 0;
   let netAllowanceLocal = 0;
+  let hostSalaryLocal = 0;
 
   if (table && table.currency !== "CNY") {
+    hostSalaryLocal = cnYToLocal(hostSalaryHalf, dest);
     netAllowanceLocal = cnYToLocal(totalAllowanceCNY, dest);
-    // 以派驻期间的工资(转为当地货币)作为基数确定边际税率
-    const salaryLocal = cnYToLocal(cnSalaryPeriod, dest);
-    grossAllowanceLocal = grossUpAllowance(netAllowanceLocal, salaryLocal, dest);
+    // 以派驻国侧的50%工资作为基数确定边际税率
+    grossAllowanceLocal = grossUpAllowance(netAllowanceLocal, hostSalaryLocal, dest);
   } else if (table) {
+    hostSalaryLocal = hostSalaryHalf;
     netAllowanceLocal = totalAllowanceCNY;
-    grossAllowanceLocal = grossUpAllowance(netAllowanceLocal, cnSalaryPeriod, dest);
+    grossAllowanceLocal = grossUpAllowance(netAllowanceLocal, hostSalaryLocal, dest);
   }
 
   const grossAllowanceCNY = localToCNY(grossAllowanceLocal, dest);
-  const allowanceTaxCNY = grossAllowanceCNY - totalAllowanceCNY; // 津贴部分的税额
+  const allowanceTaxCNY = grossAllowanceCNY - totalAllowanceCNY;
 
-  // === Step 4: 计算派驻国应缴税额 (工资+税前津贴) ===
+  // 3b: 派驻国应缴税额 = calcTax(50%工资 + 税前津贴)
   let hostTaxLocal = 0;
   if (table) {
-    const salaryLocal = cnYToLocal(cnSalaryPeriod, dest);
-    const totalIncomeLocal = salaryLocal + grossAllowanceLocal;
-    hostTaxLocal = calcCountryTax(totalIncomeLocal, dest);
+    const totalHostIncomeLocal = hostSalaryLocal + grossAllowanceLocal;
+    hostTaxLocal = calcCountryTax(totalHostIncomeLocal, dest);
   }
   const hostTaxCNY = localToCNY(hostTaxLocal, dest);
 
-  // === Step 5: 公司承担税额 = 派驻国税 + 派出国税 - 员工原应缴税额 ===
-  const companyBorneRaw = hostTaxCNY + cnTaxPeriod - originalTaxPeriod;
-  // 注: cnTaxPeriod == originalTaxPeriod, 所以简化为:
-  // companyBorneRaw = hostTaxCNY (当工资没变时)
-  // 但实际上还包括津贴部分在派出国的潜在税负
-  // 更准确的计算: 公司承担 = 两国总税额 - 员工原税额
-  const totalTaxBothCountries = hostTaxCNY + cnTaxPeriod;
+  // === Step 4: 公司承担税额 = 两国实际总税额 - 员工原应缴税额 ===
+  // 两国实际总税: 中国侧(对50%工资) + 派驻国侧(对50%工资+税前津贴)
+  const totalTaxBothCountries = cnTaxPeriod + hostTaxCNY;
   const companyBorne = Math.max(0, totalTaxBothCountries - originalTaxPeriod);
 
-  // === Step 6: 税上税计算 ===
-  // 确定边际税率 (取派驻国和派出国中较高的边际税率)
+  // === Step 5: 税上税计算 ===
   const cnMarginalRate = getChinaMarginalRate(cnTaxable);
   let hostMarginalRate = 0;
   if (table) {
-    const totalIncomeLocal = cnYToLocal(cnSalaryPeriod, dest) + grossAllowanceLocal;
-    const taxableLocal = calcTaxableIncome(totalIncomeLocal, dest);
-    // 找到对应的边际税率
+    const totalHostIncomeLocal = hostSalaryLocal + grossAllowanceLocal;
+    const taxableLocal = calcTaxableIncome(totalHostIncomeLocal, dest);
     const brackets = table.brackets;
     if (table._isBandWidth) {
-      // 香港: 取标准税率和累进的较低
       let cumWidth = 0;
       for (const [bw, rate] of brackets) {
         cumWidth += (bw === Infinity ? taxableLocal : bw);
@@ -1103,10 +1103,8 @@ function calcTaxEqualization(salaryCNY, dest, months, totalAllowanceCNY) {
       }
       if (table.flatRate) hostMarginalRate = Math.min(hostMarginalRate || table.flatRate, table.flatRate);
     } else {
-      let prev = 0;
       for (const [upper, rate] of brackets) {
         if (taxableLocal <= upper) { hostMarginalRate = rate; break; }
-        prev = upper;
       }
     }
     if (table.surcharge) hostMarginalRate *= (1 + table.surcharge);
@@ -1114,21 +1112,24 @@ function calcTaxEqualization(salaryCNY, dest, months, totalAllowanceCNY) {
     if (table.stateTaxRate) hostMarginalRate += table.stateTaxRate;
   }
 
-  // 用公司承担税额所归属的国家的边际税率来算税上税
-  // 公司承担的税额被视为中国境内的员工收入
-  const taxOnTaxRate = cnMarginalRate; // 税上税按中国税率
+  // 税上税: 公司承担的税额被视为员工收入, 按中国边际税率递归
+  const taxOnTaxRate = cnMarginalRate;
   const taxOnTax = calcTaxOnTax(companyBorne, taxOnTaxRate);
 
   // === 汇总 ===
   const totalTaxEqualization = companyBorne + taxOnTax;
 
   return {
-    // 员工原税额
+    // 发薪比例
+    splitRatio,
+    // 员工原税额 (假设100%在中国发)
     originalTaxAnnual,
     originalTaxPeriod,
-    // 派出国税额
+    // 中国侧: 50%工资的税额
+    cnSalaryHalf,
     cnTaxPeriod,
-    // 派驻国税额
+    // 派驻国侧: 50%工资+津贴的税额
+    hostSalaryHalfCNY: hostSalaryHalf,
     hostTaxCNY,
     hostTaxLocal,
     hostCurrency: table ? table.currency : "CNY",
@@ -1136,6 +1137,8 @@ function calcTaxEqualization(salaryCNY, dest, months, totalAllowanceCNY) {
     netAllowanceCNY: totalAllowanceCNY,
     grossAllowanceCNY,
     allowanceTaxCNY,
+    // 两国总税额
+    totalTaxBothCountries,
     // 公司承担
     companyBorne,
     // 税上税
@@ -1146,7 +1149,7 @@ function calcTaxEqualization(salaryCNY, dest, months, totalAllowanceCNY) {
     // 边际税率信息
     cnMarginalRate,
     hostMarginalRate,
-    // 等效比率 (vs 15%估算的对比)
+    // 等效比率
     effectiveRate: salaryCNY > 0 ? totalTaxEqualization / (salaryCNY * (months/12) + totalAllowanceCNY) : 0
   };
 }
@@ -1711,16 +1714,25 @@ function calcDispatch() {
             <td colspan="2" style="padding:0">
               <div style="background:#f8f9fa;padding:14px 18px;border-radius:8px;margin:8px 0;font-size:13px;line-height:2">
                 <div style="font-weight:600;color:var(--text);margin-bottom:8px">📐 税负平衡计算明细 Tax Equalization Breakdown</div>
+                <div style="background:#eef3ff;padding:8px 12px;border-radius:6px;margin-bottom:10px;font-size:12px;color:#3b5998">
+                  📋 发薪模式: <strong>${Math.round(teq.splitRatio*100)}%中国 + ${Math.round((1-teq.splitRatio)*100)}%派驻国 两地发薪</strong> Split Payroll
+                </div>
                 <div style="display:grid;grid-template-columns:1fr auto;gap:2px 16px">
-                  <span>① 员工原应缴中国税额 Original CN tax (${months}mo)</span>
+                  <span>① 员工原应缴中国税额 Original CN tax (100%中国发薪, ${months}mo)</span>
                   <span style="text-align:right;font-weight:600">¥ ${fmt(teq.originalTaxPeriod)}</span>
-                  <span>② 派出国(中国)应缴税额 Home country tax</span>
+                  <span style="border-top:1px dashed #ccc;padding-top:4px;color:#3b5998">🇨🇳 中国侧 Home (${Math.round(teq.splitRatio*100)}%工资 = ¥${fmt(teq.cnSalaryHalf)})</span>
+                  <span style="border-top:1px dashed #ccc;padding-top:4px"></span>
+                  <span>② 中国侧税额 CN tax on ${Math.round(teq.splitRatio*100)}% salary</span>
                   <span style="text-align:right;font-weight:600">¥ ${fmt(teq.cnTaxPeriod)}</span>
-                  <span>③ 派驻国应缴税额 Host country tax ${hasTaxTable ? '(' + teq.hostCurrency + ' ' + fmtInt(teq.hostTaxLocal) + ')' : ''}</span>
+                  <span style="border-top:1px dashed #ccc;padding-top:4px;color:#e67e22">🌍 派驻国侧 Host (${Math.round((1-teq.splitRatio)*100)}%工资 ¥${fmt(teq.hostSalaryHalfCNY)} + 津贴)</span>
+                  <span style="border-top:1px dashed #ccc;padding-top:4px"></span>
+                  <span>&nbsp;&nbsp;津贴倒算: 税后 ¥${fmt(teq.netAllowanceCNY)} → 税前 ¥${fmt(teq.grossAllowanceCNY)}</span>
+                  <span style="text-align:right;color:var(--text-secondary)">差额 ¥${fmt(teq.allowanceTaxCNY)}</span>
+                  <span>③ 派驻国侧税额 Host tax on ${Math.round((1-teq.splitRatio)*100)}% salary + allowances ${hasTaxTable ? '(' + teq.hostCurrency + ' ' + fmtInt(teq.hostTaxLocal) + ')' : ''}</span>
                   <span style="text-align:right;font-weight:600">¥ ${fmt(teq.hostTaxCNY)}</span>
-                  <span style="border-top:1px dashed #ccc;padding-top:4px">④ 津贴倒算: 税后 ¥${fmt(teq.netAllowanceCNY)} → 税前 ¥${fmt(teq.grossAllowanceCNY)}</span>
-                  <span style="border-top:1px dashed #ccc;padding-top:4px;text-align:right;color:var(--text-secondary)">差额 ¥${fmt(teq.allowanceTaxCNY)}</span>
-                  <span style="border-top:1px dashed #ccc;padding-top:4px">⑤ 公司承担税额 Company-borne = ②+③-①</span>
+                  <span style="border-top:1px dashed #ccc;padding-top:4px">④ 两国实际总税额 Total actual tax = ②+③</span>
+                  <span style="border-top:1px dashed #ccc;padding-top:4px;text-align:right;font-weight:600">¥ ${fmt(teq.totalTaxBothCountries)}</span>
+                  <span style="border-top:1px dashed #ccc;padding-top:4px">⑤ 公司承担税额 Company-borne = ④-①</span>
                   <span style="border-top:1px dashed #ccc;padding-top:4px;text-align:right;font-weight:600;color:var(--warning)">¥ ${fmt(teq.companyBorne)}</span>
                   <span>⑥ 税上税 Tax-on-tax (边际税率 ${(teq.taxOnTaxRate*100).toFixed(0)}%)</span>
                   <span style="text-align:right;font-weight:600;color:var(--danger)">¥ ${fmt(teq.taxOnTax)}</span>
@@ -1734,7 +1746,7 @@ function calcDispatch() {
           <tr style="background:var(--success-light);font-weight:700"><td>💰 增加成本粗算 Total Estimate</td><td class="amount" style="color:var(--success);font-size:16px">¥ ${fmt(r.totalCost)}</td></tr>
         </tbody>
       </table>
-      <div class="note-box">⚠️ 税负平衡基于${dest}当地税率精算，含公司承担税额+税上税。各国税制复杂，实际以税务顾问核定为准。Tax equalization calculated with ${dest} tax rates, incl. company-borne tax + tax-on-tax. Actual amount subject to tax advisor confirmation.<br>📌 计算逻辑: 公司承担(派驻国税+派出国税-员工原税额) + 税上税(边际税率${(teq.taxOnTaxRate*100).toFixed(0)}%递归) Calculation: Company bears (host tax + home tax - original tax) + tax-on-tax</div>
+      <div class="note-box">⚠️ 税负平衡基于${dest}当地税率精算，采用 <strong>50%:50% 两地发薪</strong> 模式。各国税制复杂，实际以税务顾问核定为准。Tax equalization calculated with ${dest} tax rates under 50:50 split payroll. Actual amount subject to tax advisor confirmation.<br>📌 计算逻辑: 两国实际总税额(中国侧50%工资税 + 派驻国侧50%工资及津贴税) - 员工原税额 + 税上税(边际${(teq.taxOnTaxRate*100).toFixed(0)}%递归)</div>
     </div>`;
   panel.classList.add('show');
 }
