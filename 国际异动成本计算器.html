@@ -1748,7 +1748,6 @@ function calcDispatch() {
             <td style="cursor:pointer" onclick="document.getElementById('${taxEqUID}').classList.toggle('hidden')">
               🧾 税负平衡成本 Tax Equalization
               <span style="font-size:11px;color:var(--primary);margin-left:6px">▶ 点击查看明细 Details</span>
-              ${hasTaxTable ? '<br><span style="font-size:11px;color:var(--text-secondary)">基于' + dest + '税率精算 Calculated with ' + dest + ' tax rates · 等效税率 ≈ ' + (teq.effectiveRate*100).toFixed(1) + '%</span>' : '<br><span style="font-size:11px;color:var(--text-secondary)">该地区无个税 No income tax in this region</span>'}
             </td>
             <td class="amount">¥ ${fmt(r.taxEqualization)}</td>
           </tr>
@@ -1760,17 +1759,13 @@ function calcDispatch() {
                   📋 发薪: <strong>${Math.round(teq.splitRatio*100)}%:${Math.round((1-teq.splitRatio)*100)}% 两地发薪</strong> | 🌐 中国全球征税 + 派驻国全额征税(服务地原则) | ✅ DTA抵免(避免双重征税)
                 </div>
                 <div style="display:grid;grid-template-columns:1fr auto;gap:2px 16px">
-                  <span>① 员工原应缴中国税额 Original CN tax (派驻前基准, ${months}mo)</span>
+                  <span>① 员工原应缴中国税额 Original CN tax (派驻前年薪应缴税额)</span>
                   <span style="text-align:right;font-weight:600">¥ ${fmt(teq.originalTaxPeriod)}</span>
-                  <span style="border-top:1px dashed #ccc;padding-top:4px">&nbsp;&nbsp;津贴倒算: 税后 ¥${fmt(teq.netAllowanceCNY)} → 税前 ¥${fmt(teq.grossAllowanceCNY)}</span>
-                  <span style="border-top:1px dashed #ccc;padding-top:4px;text-align:right;color:var(--text-secondary)">差额 ¥${fmt(teq.allowanceTaxCNY)}</span>
-                  <span style="border-top:1px dashed #ccc;padding-top:4px;color:#c0392b">🇨🇳 中国全球征税 CN worldwide taxation</span>
-                  <span style="border-top:1px dashed #ccc;padding-top:4px"></span>
-                  <span>② 中国税(全球收入: 100%工资+税前津贴 = ¥${fmt(teq.cnGlobalIncomePeriod)})</span>
+                  <span style="border-top:1px dashed #ccc;padding-top:4px">② 中国税(全球收入: 100%工资+税前津贴 = ¥${fmt(teq.cnGlobalIncomePeriod)})</span>
                   <span style="text-align:right;font-weight:600">¥ ${fmt(teq.cnGlobalTaxPeriod)}</span>
-                  <span style="border-top:1px dashed #ccc;padding-top:4px;color:#e67e22">🌍 派驻国税 Host country tax (100%工资+津贴, 服务地原则)</span>
-                  <span style="border-top:1px dashed #ccc;padding-top:4px"></span>
-                  <span>③ ${dest}税 (全部收入 ¥${fmt(teq.hostFullSalaryCNY)} + 津贴) ${hasTaxTable ? '(' + teq.hostCurrency + ' ' + fmtInt(teq.hostTaxLocal) + ')' : ''}</span>
+                  <span style="font-size:11px;color:var(--text-secondary);padding-left:16px">&nbsp;&nbsp;↳ 津贴倒算: 税后 ¥${fmt(teq.netAllowanceCNY)} → 税前 ¥${fmt(teq.grossAllowanceCNY)}（差额 ¥${fmt(teq.allowanceTaxCNY)}）</span>
+                  <span></span>
+                  <span style="border-top:1px dashed #ccc;padding-top:4px">③ ${dest}税 (全部收入 ¥${fmt(teq.hostFullSalaryCNY)} + 津贴) ${hasTaxTable ? '(' + teq.hostCurrency + ' ' + fmtInt(teq.hostTaxLocal) + ')' : ''}</span>
                   <span style="text-align:right;font-weight:600">¥ ${fmt(teq.hostTaxCNY)}</span>
                   ${teq.creditAmount > 0 ? '<span style="border-top:1px dashed #ccc;padding-top:4px;color:#27ae60">④ DTA抵免 Tax credit (避免双重征税协定)</span><span style="border-top:1px dashed #ccc;padding-top:4px;text-align:right;font-weight:600;color:#27ae60">-¥ ' + fmt(teq.creditAmount) + '</span>' : '<span style="border-top:1px dashed #ccc;padding-top:4px;color:#999">④ DTA抵免 (派驻国无个税, 抵免额=0)</span><span style="border-top:1px dashed #ccc;padding-top:4px;text-align:right;color:#999">¥ 0</span>'}
                   <span style="border-top:1px dashed #ccc;padding-top:4px">⑤ 实际总税负 Actual total = ②+③-④</span>
