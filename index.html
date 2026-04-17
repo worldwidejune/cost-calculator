@@ -1097,27 +1097,14 @@ function calcCompare() {
   if (!t) { panel.innerHTML = '<div class="card" style="color:var(--danger)">未找到该路线的交通数据，无法对比 Route data not found</div>'; panel.classList.add('show'); return; }
 
   // === 校验逻辑 ===
-  const warnings = [];
   const ltbsDays = days;
 
   // 方案可行性标记
-  const dispatchDisabled = months < 6;          // 派驻至少6个月
-  const dispatchOvertime = months > 36;          // 派驻超3年需审批
-  const ltbsTooShort = ltbsDays < 30;            // LTBS太短不划算
-  const ltbsTaxRisk = ltbsDays >= 183;           // LTBS有税务风险
-  const travelTaxRisk = days >= 183;             // 差旅≥183天也有税务风险
-
-  // 校验提示（简洁版）
-  if (travelTaxRisk)
-    warnings.push({level:'error', text:'⛔ 差旅 Travel ' + days + '天 days（≥183），有税务风险 Tax risk → 建议派驻 Dispatch'});
-  if (ltbsTaxRisk)
-    warnings.push({level:'error', text:'⛔ LTBS ' + ltbsDays + '天 days（≥183），有税务风险 Tax risk → 建议派驻 Dispatch'});
-  if (dispatchDisabled)
-    warnings.push({level:'error', text:'⛔ 派驻 Dispatch 需≥6个月 months，当前 ' + months + '个月 → 不适用 N/A'});
-  if (dispatchOvertime)
-    warnings.push({level:'warn', text:'⚠️ 派驻 Dispatch ' + months + '个月 months（>36），需额外审批 Extra approval needed'});
-  if (ltbsTooShort)
-    warnings.push({level:'info', text:'💡 LTBS ' + ltbsDays + '天 days（<30），建议走差旅 Travel recommended'});
+  const dispatchDisabled = months < 6;
+  const dispatchOvertime = months > 36;
+  const ltbsTooShort = ltbsDays < 30;
+  const ltbsTaxRisk = ltbsDays >= 183;
+  const travelTaxRisk = days >= 183;
 
   const ltbsTotal = t.total * 0.85;
 
@@ -1161,11 +1148,6 @@ function calcCompare() {
 
   // 英文不再单独一行，已融合到上面
 
-  // 警告 HTML
-  const warningHtml = warnings.length > 0
-    ? '<div class="card" style="background:#fff3cd;border-left:4px solid #e37400;margin-bottom:16px;padding:14px 18px;font-size:14px;line-height:1.8">' + warnings.map(w => w.text).join('<br><br>') + '</div>'
-    : '';
-
   // 税务风险标签（差旅和LTBS统一）
   const taxRiskTag183 = '<div style="color:var(--danger);font-size:13px;margin-top:6px">⚠️ ≥183天税务风险 Tax risk</div>';
   const travelRiskTag = travelTaxRisk ? taxRiskTag183 : '';
@@ -1181,7 +1163,6 @@ function calcCompare() {
   }
 
   panel.innerHTML = `
-    ${warningHtml}
     <div class="result-total" style="background:linear-gradient(135deg,#e37400,#fbbc04)">
       <div class="label">${origin} → ${dest} · ${months}个月 mo · ${days}天 days</div>
       <div class="amount" style="font-size:22px">${summaryText}</div>
