@@ -999,18 +999,55 @@ function grossUpAllowance(netAmountLocal, existingIncomeLocal, dest) {
 }
 
 /**
- * 计算税上税 (公司承担税额被视为收入, 需递归缴税)
- * 公式: 假设公司承担税额为N, 边际税率为r
- * 税上税 = N*r + N*r*r + N*r*r*r + ... = N * r / (1 - r)
- * (等比级数求和)
- * @param {number} companyBorneRaw - 公司承担的原始税额 (CNY)
- * @param {number} marginalRate - 适用的边际税率
- * @returns {number} 税上税金额 (CNY)
+ * 税上税精确计算 (迭代法)
+ *
+ * 只有中国参与税上税:
+ *   中国对全球收入征税, 公司承担的税额被视为员工额外收入, 纳入中国税基
+ *   派驻国不对「税务补贴」征税(非在该国劳务所得)
+ *
+ * 二分法求解: 找到 taxOnTax, 使得
+ *   Tax_cn(baseIncome + companyBorne + taxOnTax) - Tax_cn(baseIncome + companyBorne) ≈ taxOnTax
+ *   即 taxOnTax 本身产生的中国税增量 = taxOnTax
+ *
+ * 简化等价: 求 G 使得 Tax_cn(base + G年化) - Tax_cn(base) = G (期间额)
+ * 其中 base = cnGlobalIncomeAnnual
+ *
+ * @param {number} companyBorne - 公司承担的原始税额 (CNY, 期间额)
+ * @param {number} cnBaseAnnual - 中国全球收入年化基数 (不含公司承担)
+ * @param {number} months - 派驻月数
+ * @returns {number} 税上税金额 (CNY, 期间额)
  */
-function calcTaxOnTax(companyBorneRaw, marginalRate) {
-  if (marginalRate <= 0 || marginalRate >= 1) return 0;
-  // 等比级数: S = N * r / (1 - r)
-  return companyBorneRaw * marginalRate / (1 - marginalRate);
+function calcTaxOnTaxPrecise(companyBorne, cnBaseAnnual, months) {
+  if (companyBorne <= 0) return 0;
+
+  const cnBaseTax = calcCountryTax(cnBaseAnnual, "中国");
+
+  // 二分法: 求 G = companyBorne + taxOnTax
+  // 约束: cnDelta(G) = G - companyBorne (税增量 = 税上税)
+  // cnDelta(G) = [Tax_cn(base + G年化) - Tax_cn(base)] × (months/12)
+  let lo = companyBorne;
+  let hi = companyBorne * 2.5; // 中国最高45%, 税上税上限 ≈ N×0.45/(1-0.45) ≈ N×0.82
+
+  for (let i = 0; i < 60; i++) {
+    const G = (lo + hi) / 2;
+    const cnExtraAnnual = G * (12 / months);
+    const cnNewTax = calcCountryTax(cnBaseAnnual + cnExtraAnnual, "中国");
+    const cnDelta = (cnNewTax - cnBaseTax) * (months / 12);
+    const target = G - companyBorne; // taxOnTax 部分
+
+    if (Math.abs(cnDelta - target) < 1) {
+      return Math.round(target);
+    }
+
+    // cnDelta > target → cnDelta增长慢于target → G需要更大 → lo = G
+    // cnDelta < target → G太大 → hi = G
+    if (cnDelta > target) {
+      lo = G;
+    } else {
+      hi = G;
+    }
+  }
+  return Math.round((lo + hi) / 2 - companyBorne);
 }
 
 /**
@@ -1101,24 +1138,17 @@ function calcTaxEqualization(salaryCNY, dest, months, totalAllowanceCNY) {
   // === Step 7: 公司承担税额 ===
   const companyBorne = Math.max(0, actualTotalTax - originalTaxPeriod);
 
-  // === Step 8: 税上税 ===
+  // === Step 8: 税上税 (精确迭代法) ===
   // 公司承担的税额被视为员工额外收入, 产生新的个税
-  //
-  // 中国(全球征税): 公司承担的税额纳入中国全球收入 → 按中国边际税率递归
-  //   递归公式: S_cn = N × r_cn / (1 - r_cn) (等比级数)
-  //
-  // 派驻国(不可抵免时): 对公司承担的税额也征税 → 一次性叠加(不递归)
-  //   原因: 派驻国按服务地原则征税, 税上税的「税上税」属于公司补贴行为,
-  //          实务上不再视为在派驻国工作所得, 故不做无限递归
-  //   公式: S_host = (N + S_cn) × r_host (一次性)
-  //
-  // 香港(可抵免): 只有中国层面递归, 港税部分已从中国税中抵免
+  // 用精确迭代法(二分法): 找到总额 G = companyBorne + taxOnTax
+  // 使得 G 作为额外收入产生的中国税增量 + 派驻国税增量 = taxOnTax
+  // 精确使用各国累进税率函数, 避免固定边际税率假设
 
-  // 中国边际税率: 基于全球收入(含公司承担税额)的实际边际税率
+  // 中国边际税率(仅用于展示)
   const cnIncomeWithBorne = cnGlobalIncomeAnnual + companyBorne * (12 / months);
   const cnMarginalRate = getChinaMarginalRate(calcTaxableIncome(cnIncomeWithBorne, "中国"));
 
-  // 派驻国边际税率
+  // 派驻国边际税率(仅用于展示)
   let hostMarginalRate = 0;
   if (table) {
     const totalHostIncomeLocal = fullSalaryLocal + grossAllowanceLocal;
@@ -1141,12 +1171,8 @@ function calcTaxEqualization(salaryCNY, dest, months, totalAllowanceCNY) {
     if (table.stateTaxRate) hostMarginalRate += table.stateTaxRate;
   }
 
-  // 中国层面递归: S_cn = N × r_cn / (1 - r_cn)
-  const cnTaxOnTax = calcTaxOnTax(companyBorne, cnMarginalRate);
-  // 派驻国层面一次性: S_host = (N + S_cn) × r_host (仅不可抵免时)
-  const hostTaxOnTax = canCreditHost ? 0 : (companyBorne + cnTaxOnTax) * hostMarginalRate;
-  const taxOnTax = cnTaxOnTax + hostTaxOnTax;
-  // 用于展示的综合等效税率
+  // 精确计算税上税 (只有中国参与, 派驻国不对税务补贴征税)
+  const taxOnTax = calcTaxOnTaxPrecise(companyBorne, cnGlobalIncomeAnnual, months);
   const taxOnTaxRate = companyBorne > 0 ? taxOnTax / companyBorne : 0;
 
   // === 汇总 ===
@@ -1771,7 +1797,7 @@ function calcDispatch() {
                   <span style="border-top:1px dashed #ccc;padding-top:4px;text-align:right;font-weight:600">¥ ${fmt(teq.actualTotalTax)}</span>
                   <span style="border-top:1px dashed #ccc;padding-top:4px">⑥ 公司承担 Company-borne = ⑤-①</span>
                   <span style="border-top:1px dashed #ccc;padding-top:4px;text-align:right;font-weight:600;color:var(--warning)">¥ ${fmt(teq.companyBorne)}</span>
-                  <span>⑦ 税上税 Tax-on-tax (${teq.canCreditHost ? '中国递归' + (teq.cnMarginalRate*100).toFixed(0) + '%' : '中国递归' + (teq.cnMarginalRate*100).toFixed(0) + '% + ' + dest + '一次性' + (teq.hostMarginalRate*100).toFixed(0) + '%'})</span>
+                  <span>⑦ 税上税 Tax-on-tax (中国全球征税, 边际${(teq.cnMarginalRate*100).toFixed(0)}%, 精确迭代)</span>
                   <span style="text-align:right;font-weight:600;color:var(--danger)">¥ ${fmt(teq.taxOnTax)}</span>
                   <span style="border-top:2px solid #333;padding-top:6px;font-weight:700">💰 税负平衡合计 Total = ⑥+⑦</span>
                   <span style="border-top:2px solid #333;padding-top:6px;text-align:right;font-weight:700;color:var(--success);font-size:15px">¥ ${fmt(teq.totalTaxEqualization)}</span>
@@ -1783,7 +1809,7 @@ function calcDispatch() {
           <tr style="background:var(--success-light);font-weight:700"><td>💰 增加成本粗算 Total Estimate</td><td class="amount" style="color:var(--success);font-size:16px">¥ ${fmt(r.totalCost)}</td></tr>
         </tbody>
       </table>
-      <div class="note-box">⚠️ 中国对全球收入征税，派驻国对在其境内工作的全部收入征税(服务地原则)。仅中国香港已缴税可抵免(中港DTA)，其他国家双重征税。<br>📌 税负平衡 = (中国全球税+派驻国税${teq.canCreditHost ? '-港税抵免' : ''}) - 员工原税额 + 税上税(中国${(teq.cnMarginalRate*100).toFixed(0)}%递归${teq.canCreditHost ? '' : ' + 派驻国' + (teq.hostMarginalRate*100).toFixed(0) + '%一次性'})</div>
+      <div class="note-box">⚠️ 中国对全球收入征税，派驻国对在其境内工作的全部收入征税(服务地原则)。仅中国香港已缴税可抵免(中港DTA)，其他国家双重征税。<br>📌 税负平衡 = (中国全球税+派驻国税${teq.canCreditHost ? '-港税抵免' : ''}) - 员工原税额 + 税上税(中国边际${(teq.cnMarginalRate*100).toFixed(0)}%, 精确迭代)</div>
     </div>`;
   panel.classList.add('show');
 }
